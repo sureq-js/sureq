@@ -1,0 +1,71 @@
+{
+  "name": "@sureq/core",
+  "version": "1.0.0-rc.1",
+  "description": "SureQ: a durable, multi-pod-safe job queue for Node.js with pluggable storage.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sureq-js/sureq.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/sureq-js/sureq/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/sureq-js/sureq/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./producer": {
+      "import": {
+        "types": "./dist/producer.d.ts",
+        "default": "./dist/producer.js"
+      },
+      "require": {
+        "types": "./dist/producer.d.cts",
+        "default": "./dist/producer.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {},
+  "scripts": {
+    "build": "tsdown",
+    "bench:claim": "tsx bench/claim-throughput.ts",
+    "bench:poll": "tsx bench/poll-latency.ts",
+    "bench:baseline": "tsx bench/baseline.ts",
+    "bench:batch": "tsx bench/batch-fill.ts",
+    "bench:progress": "tsx bench/progress-writes.ts",
+    "bench:observability": "node --expose-gc --max-old-space-size=8192 --import tsx bench/observability-cost.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:stress": "SUREQ_STRESS_JOBS=120000 SUREQ_STRESS_PODS=20 SUREQ_STRESS_TICKS=100000 vitest run tests/stress",
+    "test:gates": "npm run test:stress && vitest run tests/chaos tests/regression/sigterm-shutdown.test.ts",
+    "test:types": "vitest run --typecheck.only",
+    "coverage": "vitest run --coverage",
+    "test:dist": "npm run build && SUREQ_TARGET=esm vitest run tests/dist && SUREQ_TARGET=cjs vitest run tests/dist",
+    "check:pkg": "npm run build && node ../../scripts/check-pkg.mjs"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
+}

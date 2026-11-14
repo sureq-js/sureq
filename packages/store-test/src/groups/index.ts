@@ -1,0 +1,31 @@
+import { adminGroup } from './admin.js';
+import { batchGroup } from './batch.js';
+import { cancelGroup } from './cancel.js';
+import { capabilitiesGroup } from './capabilities.js';
+import { claimGroup } from './claim.js';
+import { clockGroup } from './clock.js';
+import { contractGroup } from './contract.js';
+import { dedupGroup } from './dedup.js';
+import { dlqGroup } from './dlq.js';
+import { fencingGroup } from './fencing.js';
+import { gpauseGroup } from './gpause.js';
+import { historyGroup } from './history.js';
+import { idemGroup } from './idem.js';
+import { leaseConfigGroup } from './lease-config.js';
+import { leaseGroup } from './lease.js';
+import { mergeGroup } from './merge.js';
+import { metaGroup } from './meta.js';
+import { poisonGroup } from './poison.js';
+import { progressGroup } from './progress.js';
+import { releaseGroup } from './release.js';
+import { retentionGroup } from './retention.js';
+import { scheduleGroup } from './schedule.js';
+import { singletonGroup } from './singleton.js';
+import { statsGroup } from './stats.js';
+import { stressGroup } from './stress.js';
+import { sweepGroup } from './sweep.js';
+import type { ConformanceGroup } from './types.js';
+import { workersGroup } from './workers.js';
+
+/** Every group, in execution order. */
+export const GROUPS: ConformanceGroup[] = [contractGroup, capabilitiesGroup, claimGroup, leaseGroup, leaseConfigGroup, fencingGroup, progressGroup, sweepGroup, historyGroup, dlqGroup, poisonGroup, releaseGroup, batchGroup, cancelGroup, gpauseGroup, clockGroup, dedupGroup, singletonGroup, idemGroup, workersGroup, mergeGroup, metaGroup, statsGroup, scheduleGroup, adminGroup, retentionGroup, stressGroup];

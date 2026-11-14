@@ -1,0 +1,8 @@
+{
+  "v": 1,
+  "name": "Error",
+  "message": "fx",
+  "stack": "Error: fx\n    at fixture",
+  "cause": { "v": 1, "name": "NonErrorThrown", "message": "why" },
+  "props": { "status": 500 }
+}

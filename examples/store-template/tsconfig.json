@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@sureq/core": ["../../packages/core/src/index.ts"],
+      "@sureq/store-test": ["../../packages/store-test/src/index.ts"]
+    }
+  },
+  "include": ["src", "tests", "*.ts"]
+}

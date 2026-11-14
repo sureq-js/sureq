@@ -1,0 +1,19 @@
+node_modules/
+/dist/
+packages/*/dist/
+/coverage/
+packages/*/coverage/
+*.log
+.DS_Store
+.claude/worktrees/
+.superpowers/
+# Raw text dumps the repo was rebuilt from; they contain the planning docs below
+/dumps/
+
+# Planning docs: kept on development machines only, never published
+/FEATURES.md
+/ROADMAP.md
+/docs/
+
+# Browser-automation output (screenshots, console logs, page snapshots)
+/.playwright-mcp/

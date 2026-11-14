@@ -1,0 +1,6 @@
+{
+  "extends": "../../api-extractor.base.json",
+  "projectFolder": ".",
+  "mainEntryPointFilePath": "<projectFolder>/dist/producer.d.ts",
+  "apiReport": { "reportFileName": "core-producer" }
+}

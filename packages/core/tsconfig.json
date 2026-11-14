@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@sureq/core": [
+        "./src/index.ts"
+      ],
+      "@sureq/core/producer": [
+        "./src/producer.ts"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "tests",
+    "*.ts"
+  ]
+}

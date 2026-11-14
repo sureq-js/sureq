@@ -1,0 +1,30 @@
+{
+  "node": "v22.23.4",
+  "cpu": "Apple M5 x 10",
+  "date": "2026-11-06",
+  "version": "0.2.0",
+  "rows": {
+    "throughput.pods1.jobsPerSec": 27926.3758076349,
+    "throughput.pods20.jobsPerSec": 30619.358852947134,
+    "throughput.pods20.modelled.jobsPerSec": 2023.0736694655857,
+    "memory.claim.limit1.p50Ms": 0.003416999999899417,
+    "memory.claim.limit1.p99Ms": 0.006999999999607098,
+    "memory.claim.limit10.p50Ms": 0.027249999984633178,
+    "memory.claim.limit10.p99Ms": 0.03862500001559965,
+    "memory.complete.p50Ms": 0.002207999990787357,
+    "memory.complete.p99Ms": 0.0053340000013122335,
+    "template.claim.limit1.p50Ms": 1.1760839999769814,
+    "template.claim.limit1.p99Ms": 2.1241659999941476,
+    "template.claim.limit10.p50Ms": 1.0856659999699332,
+    "template.claim.limit10.p99Ms": 1.9287500000209548,
+    "template.complete.p50Ms": 0.16212500000256114,
+    "template.complete.p99Ms": 0.20595800000592135,
+    "endToEnd.p50Ms": 0.10037499997997656,
+    "endToEnd.p99Ms": 0.15645899999071844,
+    "cancel.p50Ms": 0.006750000000465661,
+    "cancel.p99Ms": 0.009083000011742115,
+    "cancel.storeCalls": 4,
+    "idle.claimsPerMin": 143.66666666666666,
+    "idle.pod.callsPerMin": 124.33333333333334
+  }
+}

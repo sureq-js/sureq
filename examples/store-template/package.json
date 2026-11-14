@@ -1,0 +1,24 @@
+{
+  "name": "store-template",
+  "version": "1.0.0-rc.1",
+  "private": true,
+  "description": "A commented toy store adapter for SureQ: copy it and replace backend.ts",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/template.test.ts",
+    "test:conformance": "vitest run tests/conformance.test.ts"
+  },
+  "peerDependencies": {
+    "@sureq/core": "^1.0.0-rc.1"
+  },
+  "devDependencies": {
+    "@sureq/core": "*",
+    "@sureq/store-test": "*"
+  }
+}

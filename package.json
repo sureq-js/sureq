@@ -1,0 +1,50 @@
+{
+  "name": "sureq-monorepo",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sureq-js/sureq.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @sureq/core && npm run build -w @sureq/store-test",
+    "lint": "eslint . && node scripts/check-neutral.mjs packages/core/src",
+    "check:neutral": "npm run build && node scripts/check-neutral.mjs packages/core/src packages/core/dist",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:conformance": "npm run test:conformance --workspaces --if-present",
+    "test:stress": "npm run test:stress --workspaces --if-present",
+    "test:gates": "npm run test:gates --workspaces --if-present",
+    "test:types": "npm run test:types --workspaces --if-present",
+    "coverage": "npm run coverage --workspaces --if-present",
+    "test:dist": "npm run test:dist --workspaces --if-present",
+    "check:pkg": "npm run check:pkg --workspaces --if-present",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "api:check": "npm run build && api-extractor run -c packages/core/api-extractor.json && api-extractor run -c packages/core/api-extractor.producer.json && api-extractor run -c packages/store-test/api-extractor.json && node scripts/check-api-any.mjs",
+    "api:update": "npm run build && api-extractor run --local -c packages/core/api-extractor.json && api-extractor run --local -c packages/core/api-extractor.producer.json && api-extractor run --local -c packages/store-test/api-extractor.json && node scripts/check-api-any.mjs"
+  },
+  "overrides": {
+    "minimatch": "^11.0.8"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@microsoft/api-extractor": "^7.60.1",
+    "@types/node": "^22.20.5",
+    "@vitest/coverage-v8": "^5.1.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
+    "publint": "^0.3.25",
+    "tsdown": "^0.23.4",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
+  }
+}

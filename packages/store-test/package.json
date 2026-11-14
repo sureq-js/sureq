@@ -1,0 +1,61 @@
+{
+  "name": "@sureq/store-test",
+  "version": "1.0.0-rc.1",
+  "description": "Store conformance suite for SureQ",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sureq-js/sureq.git",
+    "directory": "packages/store-test"
+  },
+  "homepage": "https://github.com/sureq-js/sureq/tree/main/packages/store-test#readme",
+  "bugs": {
+    "url": "https://github.com/sureq-js/sureq/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {},
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --exclude 'tests/conformance/**'",
+    "test:conformance": "vitest run tests/conformance",
+    "test:stress": "SUREQ_STRESS_JOBS=120000 vitest run tests/memory-store.test.ts -t \"stress: \"",
+    "test:gates": "npm run test:stress && vitest run tests/suite.test.ts tests/broken.test.ts tests/conformance tests/memory-store.test.ts",
+    "coverage": "vitest run --coverage",
+    "test:dist": "npm run build -w @sureq/core -w @sureq/store-test && vitest run -c vitest.dist.config.ts",
+    "check:pkg": "npm run build -w @sureq/core -w @sureq/store-test && node ../../scripts/check-pkg.mjs"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@sureq/core": "^1.0.0-rc.1"
+  },
+  "devDependencies": {
+    "@sureq/core": "^1.0.0-rc.1"
+  }
+}

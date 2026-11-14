@@ -1,0 +1,42 @@
+name: publish
+
+# Run by hand only: never on push, tag or release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      # one dist-tag is derived for both packages, so their versions must be identical
+      - name: Check the packages share one version
+        run: |
+          node -e "
+            const v = ['core', 'store-test'].map((d) => require('./packages/' + d + '/package.json').version);
+            if (new Set(v).size !== 1) { console.error('package versions differ: ' + v.join(', ')); process.exit(1); }
+          "
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:dist
+      - run: npm run check:pkg
+      - run: npm run check:licenses
+      # a prerelease version (one with a hyphen) is published under `next`, so it never takes the `latest` tag
+      - id: dist-tag
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+          case "$version" in
+            *-*) echo "tag=next" >> "$GITHUB_OUTPUT" ;;
+            *) echo "tag=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }} --registry=https://registry.npmjs.org/ -w @sureq/core -w @sureq/store-test
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

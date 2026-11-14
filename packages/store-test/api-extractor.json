@@ -1,0 +1,7 @@
+{
+  "extends": "../../api-extractor.base.json",
+  "projectFolder": ".",
+  "mainEntryPointFilePath": "<projectFolder>/dist/index.d.ts",
+  "compiler": { "tsconfigFilePath": "<projectFolder>/tsconfig.build.json" },
+  "apiReport": { "reportFileName": "store-test" }
+}
