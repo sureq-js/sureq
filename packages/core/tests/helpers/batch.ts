@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import type { Logger } from '../../src/logger/logger.js';
 import { Queue } from '../../src/queue/queue.js';
 import type { BatchWorkerOptions, QueueOptions } from '../../src/queue/options.js';
 import { MemoryStore } from '../../src/store/memory/memory-store.js';
@@ -29,7 +30,8 @@ export function batchSetup(o: { over?: (inner: MemoryStore) => Over; inner?: Mem
   useFakeTime();
   const inner = o.inner ?? new MemoryStore({ clock: () => Date.now() });
   const spy = spyStore(inner, o.over?.(inner));
-  const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+  // Typed mocks: TypeScript 7 refuses to write vi.fn()'s default type (a Vitest internal) into a declaration.
+  const logger = { debug: vi.fn<Logger['debug']>(), info: vi.fn<Logger['info']>(), warn: vi.fn<Logger['warn']>(), error: vi.fn<Logger['error']>() };
   const q = new Queue('b', { logger, leaseDuration: '30s', shutdownAbortGrace: 0, ...o.queue, store: spy.store });
   queues.push(q);
   const t0 = performance.now();

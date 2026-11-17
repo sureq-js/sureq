@@ -1,4 +1,6 @@
 import { vi } from 'vitest';
+import type { WorkerEvents } from '../../src/events/types.js';
+import type { Job } from '../../src/job/job.js';
 import { Queue } from '../../src/queue/queue.js';
 import type { BatchWorkerOptions, QueueOptions, WorkerOptions } from '../../src/queue/options.js';
 import type { BatchHandler } from '../../src/worker/batch.js';
@@ -98,7 +100,14 @@ export async function blockedWorker() {
   const runs: string[] = [];
   let release!: () => void;
   const gate = new Promise<void>((r) => (release = r));
-  const events = { leaseLostA: vi.fn(), completedA: vi.fn(), failedA: vi.fn(), completed: vi.fn() };
+  // Typed mocks: TypeScript 7 refuses to write vi.fn()'s default type (a Vitest internal) into a declaration.
+  type Listener = (...args: unknown[]) => void;
+  const events = {
+    leaseLostA: vi.fn<(event: WorkerEvents<Job>['leaseLost']) => void>(),
+    completedA: vi.fn<Listener>(),
+    failedA: vi.fn<Listener>(),
+    completed: vi.fn<Listener>(),
+  };
   const { job } = await w.a.add({ n: 1 });
   const workerA = w.a.process(async () => {
     runs.push('A');
