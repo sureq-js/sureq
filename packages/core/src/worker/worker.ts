@@ -906,7 +906,7 @@ export class Worker<D = unknown, R = unknown> {
         const complete = { id: rec.id, token, ...encoded, history, ...ext };
         return this.#finalize('complete', rec, () => client.call('complete', scope, complete), async (now) => {
           // Listeners see what a later getJob sees: the stored, round-tripped result and store-time duration.
-          const job = removed ? this.#removedJob(rec, { state: 'completed', result: encoded.result }, now) : await this.#snapshot(rec.id, active, now);
+          const job = removed ? this.#removedJob(rec, { state: 'completed', result: complete.result }, now) : await this.#snapshot(rec.id, active, now);
           const durationMs = job.finishedAt !== null && job.startedAt !== null ? Math.max(0, job.finishedAt - job.startedAt) : 0;
           this.#events.emit('completed', { job, result: job.result as R, durationMs, ...(removed && { removed }) });
           await this.#evaluateDrained();

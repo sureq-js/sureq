@@ -202,7 +202,8 @@ function resolveAlerts(v: unknown, add?: (issue: ConfigIssue) => void): Resolved
   const issues: ConfigIssue[] = [];
   let out: Record<string, Record<string, number> | number> = {};
   try {
-    out = validate('alerts', { alerts: v }, { fields: { alerts: { kind: 'object', schema: alertsSchema } } }).alerts as typeof out;
+    const checked: { alerts?: unknown } = validate('alerts', { alerts: v }, { fields: { alerts: { kind: 'object', schema: alertsSchema } } });
+    out = checked.alerts as typeof out;
   } catch (e) {
     if (!(e instanceof InvalidOptionError)) throw e;
     issues.push(...e.issues);

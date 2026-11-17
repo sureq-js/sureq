@@ -1,3 +1,4 @@
+import type { ConfigIssue } from '../errors/catalog.js';
 import { validate, type Schema } from '../util/validate.js';
 import { cronIssue, nextCronMatch, parseCron, type CronSpec } from './cron.js';
 import { everyIssue, nextEveryOccurrence, parseEvery } from './interval.js';
@@ -23,7 +24,7 @@ export function parseTiming(scope: string, input: unknown, nowMs: number): Timin
       if (cron !== undefined && every !== undefined) add({ path: 'every', code: 'conflict', message: 'give either cron or every, not both' });
       if (tz !== undefined && every !== undefined) add({ path: 'tz', code: 'conflict', message: 'tz applies only to cron' });
       const issues = (cron !== undefined ? [cronIssue(cron), tz === undefined ? undefined : tzIssue(tz)] : [everyIssue(every)])
-        .filter((i) => i !== undefined);
+        .filter((i): i is ConfigIssue => i !== undefined);
       issues.forEach(add);
       if (issues.length === 0 && cron !== undefined && every === undefined && nextCronMatch(parseCron(cron as string), (tz as string | undefined) ?? 'UTC', nowMs) === null) {
         add({ path: 'cron', code: 'invalid_value', reason: 'no-occurrence', message: 'no date matches within 9 years' });

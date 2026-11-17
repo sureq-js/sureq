@@ -117,8 +117,18 @@ describe('repository hygiene', () => {
     // run the workflow's own case block, the way the step runs it
     const block = /^\s*(case "\$version" in\n[\s\S]*?\n\s*esac)$/m.exec(yml)?.[1];
     expect(block).toBeDefined();
-    const tagFor = (version: string) =>
-      spawnSync('sh', ['-c', block!], { encoding: 'utf8', env: { ...process.env, version, GITHUB_OUTPUT: '/dev/stdout' } }).stdout;
+    // GITHUB_OUTPUT is a file, as on a runner; /dev/stdout cannot be reopened on Linux, where a child's stdout is a socket
+    const tagFor = (version: string) => {
+      const dir = mkdtempSync(join(tmpdir(), 'sureq-tag-'));
+      try {
+        const out = join(dir, 'output');
+        writeFileSync(out, '');
+        spawnSync('sh', ['-c', block!], { encoding: 'utf8', env: { ...process.env, version, GITHUB_OUTPUT: out } });
+        return readFileSync(out, 'utf8');
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    };
     expect(tagFor('1.0.0-rc.1')).toBe('tag=next\n');
     expect(tagFor('1.0.0')).toBe('tag=latest\n');
     // the tag is shared, so the step before install refuses packages whose versions differ

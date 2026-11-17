@@ -53,7 +53,7 @@ let active = 0;
 worker.on('active', () => {
   if (++active === 3) {
     // The idle jobs are held (batch mode) once the next claim returns.
-    const ready = () => (!batched || (worker as { batch?: { held: number } }).batch!.held === 2 ? process.send!({ type: 'ready' }) : setTimeout(ready, 10));
+    const ready = (): unknown => (!batched || (worker as { batch?: { held: number } }).batch!.held === 2 ? process.send!({ type: 'ready' }) : setTimeout(ready, 10));
     ready();
   }
 });

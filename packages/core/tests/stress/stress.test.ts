@@ -60,7 +60,8 @@ const settled = (q: Queue<Data>) => async () => {
   return c.waiting + c.delayed + c.active === 0;
 };
 
-describe('stress', { timeout: 300_000 }, () => {
+// Correctness under load, not speed: CI runners vary, so the limit leaves room (the 100k-tick run took ~5 min there).
+describe('stress', { timeout: 900_000 }, () => {
   it('stress: every job is processed exactly once across simulated pods', async () => {
     const store = new MemoryStore();
     const ps = pods(store, 'once');

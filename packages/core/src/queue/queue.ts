@@ -357,7 +357,8 @@ export class Queue<D = unknown, R = unknown, Names extends NameMap = Record<stri
     for (const open of this.#workers) {
       for (const jobName of open.jobNames) if (jobName !== null && handlers.has(jobName)) throw new DuplicateHandlerError({ jobName });
     }
-    return this.#spawn(handlers.keys(), resolved, (host) => new Worker<D, R>(host, handlers, resolved));
+    const workerOpts = resolved;
+    return this.#spawn(handlers.keys(), workerOpts, (host) => new Worker<D, R>(host, handlers, workerOpts));
   }
 
   /**
@@ -384,7 +385,8 @@ export class Queue<D = unknown, R = unknown, Names extends NameMap = Record<stri
     if (issues.length > 0 || !resolved) throw new InvalidOptionError(scope, issues);
     const { batchSize: size, batchDelay: delayMs, batchMaxWait, onShutdown } = resolved;
     const setup = { handler: handler as BatchHandler, size, delayMs, maxWaitMs: batchMaxWait ?? Math.min(delayMs * 20, MAX_TIMER_MS), onShutdown };
-    return this.#spawn([null], resolved, (host) => new BatchWorker<D, R>(host, setup, resolved));
+    const batchOpts = resolved;
+    return this.#spawn([null], batchOpts, (host) => new BatchWorker<D, R>(host, setup, batchOpts));
   }
 
   /** Register and start a worker built over this queue. */
