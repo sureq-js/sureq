@@ -4,7 +4,7 @@ All notable changes to `@sureq/core`. From 1.0, semver applies to the public API
 The store contract stays experimental and may change in a minor release until it is declared stable.
 Before 1.0, a minor release (0.x) could break the API; every break is listed below.
 
-## 1.0.0-rc.1 - unreleased
+## 1.0.0-rc.1 - 2026-11-17
 
 **Upgrading from 0.3**
 - 0.3 and 1.0 store jobs in the same format, so pods on 0.3.x and 1.0 can share one store during a rolling deploy, and neither goes into degraded mode.
