@@ -222,7 +222,7 @@ await closed
 console.log('closed')
 ```
 
-Keep `shutdownTimeout` shorter than the orchestrator's grace period, and pass `ctx.signal` to slow calls; a job cut off at shutdown is not lost: it goes back to waiting with its attempt refunded.
+`close()` can take `shutdownTimeout` plus `shutdownAbortGrace` plus about a second for the releases: with the defaults of 25 s and 2 s, about 28 s, which fits the Kubernetes default grace period of 30 s. Keep that total inside the orchestrator's grace period, and pass `ctx.signal` to slow calls; a job cut off at shutdown is not lost: it goes back to waiting with its attempt refunded.
 
 ### A producer-only web pod
 
@@ -251,9 +251,9 @@ const server = createServer(async (req, res) => {
 })
 server.listen(3000)
 
-process.once('SIGTERM', () => {
+process.once('SIGTERM', async () => {
   server.close()
-  void producer.close()
+  await producer.close()
 })
 ```
 

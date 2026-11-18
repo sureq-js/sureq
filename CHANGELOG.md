@@ -14,7 +14,7 @@ Before 1.0, a minor release (0.x) could break the API; every break is listed bel
 **Changed (API decisions before 1.0)**
 - The store contract (`Store`, its request and result types, `STORE_CONTRACT_VERSION`, `MemoryStore`'s contract methods and the `store` option) is marked beta: experimental until 1.1, as the docs say.
 - `Schedule` is its own type with the fields the docs list. It no longer exposes the store's `rev`; `createdAt` and `updatedAt` are documented.
-- A bare number is refused as a job's `keep` (`keep: 1000` was 1000 milliseconds, while the queue `retention` reads a number as a count). Write `'1000ms'` or `{ age: 1000 }`.
+- A bare number is refused as a job's `keep` (`keep: { completed: 1000 }` was 1000 milliseconds, while the queue `retention` reads a number as a count). Write a duration per outcome, such as `keep: { completed: '1000ms' }` or `keep: { completed: { age: 1000 } }`.
 
 **Added**
 - An agent skill, `skills/sureq`, installable with `npx skills add sureq-js/sureq --skill sureq`.

@@ -84,7 +84,7 @@ For those, and the full detail of every row, see the [reference pages](../../../
 | `backoff` | `BackoffSpec` | exponential from 1 s, factor 2, full jitter, 1 h cap | The wait before each retry. |
 | `timeout` | `Duration` | the worker's, else the queue's, else none | Abort `ctx.signal` with `JobTimeoutError` this long after the handler starts. |
 | `timeoutGrace` | `Duration` | the worker's, else the queue's, else `'5s'` | How long a timed-out handler may keep running before the attempt fails anyway. |
-| `keep` | `{ completed?: JobKeep; failed?: JobKeep; cancelled?: JobKeep }` | the queue's `retention` | How long this job is kept once finished. A bare number is refused: write `'1000ms'` or `{ age: 1000 }`. |
+| `keep` | `{ completed?: JobKeep; failed?: JobKeep; cancelled?: JobKeep }` | the queue's `retention` | How long this job is kept once finished, per outcome. A bare number other than `0` is refused: write `{ completed: '1000ms' }` or `{ completed: { age: 1000 } }`. |
 
 ## Producer
 

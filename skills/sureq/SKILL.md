@@ -59,7 +59,7 @@ Each line follows [Going to production](../../user-docs/02-guides/16-going-to-pr
 - Do not create a `Queue` per request, because a queue with no `store` makes its own in-memory store, so jobs added to it never reach your worker; create the queue once at start-up and reuse it.
 - Do not leave out the `error` listener, because store and listener failures are reported as `error` events.
 - Do not call `close()` without `await`, because the process can exit before running jobs finish or are released.
-- Do not pass a bare number as a job `keep`, because it is refused on a job; write a duration such as `'1d'` or `{ age: 1000 }`.
+- Do not pass a bare number as a job's `keep` value, because it is refused on a job (only `0`, meaning none, is accepted); `keep` is per outcome, so write `keep: { completed: '1d' }` or `keep: { completed: { age: 1000 } }`.
 
 ## Where to look
 
