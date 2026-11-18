@@ -1,8 +1,10 @@
 name: ci
 
+# Runs once per pull request update. Not on branch pushes (the PR already runs it), not on merges to main
+# (the PR was green and up to date with main before the merge), and not on release tags (already tested).
 on:
-  push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:

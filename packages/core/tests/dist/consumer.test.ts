@@ -20,7 +20,9 @@ const ADD_AND_RUN = `
 describe('consumer smoke', { timeout: 120_000 }, () => {
   it('pkg: packed tarball works for import, require and tsc', () => {
     const packDir = mkdtempSync(join(tmpdir(), 'sureq-pack-'));
-    const [report] = JSON.parse(execFileSync('npm', ['pack', '--json', '--pack-destination', packDir], { cwd: root, encoding: 'utf8' })) as Array<{ filename: string }>;
+    // npm prints a list (npm 10), one object (npm 11) or an object keyed by package name (npm 12): accept all three
+    const packed = JSON.parse(execFileSync('npm', ['pack', '--json', '--pack-destination', packDir], { cwd: root, encoding: 'utf8' })) as unknown;
+    const report = (Array.isArray(packed) ? packed[0] : 'filename' in (packed as object) ? packed : Object.values(packed as object)[0]) as { filename: string };
     const tarball = join(packDir, report!.filename);
 
     const app = mkdtempSync(join(tmpdir(), 'sureq-consumer-'));
