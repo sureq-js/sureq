@@ -33,7 +33,7 @@ step npm run test:conformance
 step npm run test:stress
 
 # types job: each TypeScript version is installed without saving, then the lockfile's versions are restored
-for ts in 5.0 latest; do
+for ts in 5.0 7.0; do
   echo ""
   echo "==> types job, TypeScript $ts"
   step npm install --no-save "typescript@$ts"

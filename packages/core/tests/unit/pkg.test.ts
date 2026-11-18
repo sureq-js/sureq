@@ -141,7 +141,7 @@ describe('pkg', () => {
 
   it('pkg: CI runs Node 22 and 24 and the dist suite', () => {
     const ci = readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 'utf8');
-    for (const needle of ['22', '24', 'test:dist', 'check:pkg', "typescript: ['5.0', 'latest']"]) expect(ci).toContain(needle);
+    for (const needle of ['22', '24', 'test:dist', 'check:pkg', "typescript: ['5.0', '7.0']"]) expect(ci).toContain(needle);
   });
 
   it('pkg: publint and attw report no errors', () => {
