@@ -36,21 +36,21 @@ Read the rules here first, then open a reference file for the details.
 
 ## Production checklist
 
-Each line follows [Going to production](../../user-docs/02-guides/16-going-to-production.md).
+Each line follows [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md).
 
-- Use a durable, shared store that passes the conformance kit, because `MemoryStore` cannot be shared between processes. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Remove `acknowledgeVolatileStore` from production code, because it only hides the warning that the store is not durable. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Set the same `namespace` on every queue and producer of an app and environment, because pods only share jobs inside one namespace. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Set `signals: ['SIGTERM']` or call `close()` yourself, and fit `shutdownTimeout` plus `shutdownAbortGrace` plus about a second inside the pod's grace period, because a killed pod does not release its jobs. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Serve `live` and `ready` from `health()` on two endpoints, and call `await queue.ready()` at start-up, because the orchestrator needs them to route and restart pods. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Set `alerts` rules and listen for `alert` and `error` on every queue and worker, because store failures and alert changes reach your code only as events. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Pass your own `logger`, because SureQ logs errors and alert changes but never each job. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Pick `concurrency` from what one pod can handle, and give long jobs a longer `leaseDuration`, because a lease that runs out lets another worker run the job again. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Set `timeout` on jobs that can hang and pass `ctx.signal` to your I/O, because a hung handler holds a worker slot. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Keep job data small and set `maxPayloadBytes` and `maxResultBytes`, because a bad caller then fails fast. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Make handlers safe to run twice and pass `job.idempotencyKey` to outside APIs, because a job can run again after a crash or a lost lease. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Check how long finished jobs and dead letters are kept, and decide who redrives dead letters, because nobody else will. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
-- Pin SureQ and your store adapter together and read the CHANGELOG before you upgrade, because the store contract is experimental until 1.1. See [Going to production](../../user-docs/02-guides/16-going-to-production.md#checklist).
+- Use a durable, shared store that passes the conformance kit, because `MemoryStore` cannot be shared between processes. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Remove `acknowledgeVolatileStore` from production code, because it only hides the warning that the store is not durable. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Set the same `namespace` on every queue and producer of an app and environment, because pods only share jobs inside one namespace. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Set `signals: ['SIGTERM']` or call `close()` yourself, and fit `shutdownTimeout` plus `shutdownAbortGrace` plus about a second inside the pod's grace period, because a killed pod does not release its jobs. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Serve `live` and `ready` from `health()` on two endpoints, and call `await queue.ready()` at start-up, because the orchestrator needs them to route and restart pods. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Set `alerts` rules and listen for `alert` and `error` on every queue and worker, because store failures and alert changes reach your code only as events. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Pass your own `logger`, because SureQ logs errors and alert changes but never each job. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Pick `concurrency` from what one pod can handle, and give long jobs a longer `leaseDuration`, because a lease that runs out lets another worker run the job again. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Set `timeout` on jobs that can hang and pass `ctx.signal` to your I/O, because a hung handler holds a worker slot. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Keep job data small and set `maxPayloadBytes` and `maxResultBytes`, because a bad caller then fails fast. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Make handlers safe to run twice and pass `job.idempotencyKey` to outside APIs, because a job can run again after a crash or a lost lease. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Check how long finished jobs and dead letters are kept, and decide who redrives dead letters, because nobody else will. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
+- Pin SureQ and your store adapter together and read the CHANGELOG before you upgrade, because the store contract is experimental until 1.1. See [Going to production](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/16-going-to-production.md#checklist).
 
 ## Mistakes to avoid
 
@@ -66,5 +66,5 @@ Each line follows [Going to production](../../user-docs/02-guides/16-going-to-pr
 - [references/options.md](references/options.md): queue, worker, batch worker, job and producer options, with names, defaults and ranges.
 - [references/recipes.md](references/recipes.md): the common tasks, each a complete sample.
 - [references/custom-store.md](references/custom-store.md): the store contract, what a store must keep, a template and the conformance kit.
-- The user docs in this repository, starting at [Your first queue](../../user-docs/01-getting-started/02-first-queue.md).
+- The user docs in the SureQ repository, starting at [Your first queue](https://github.com/sureq-js/sureq/blob/main/user-docs/01-getting-started/02-first-queue.md).
 - The public docs: https://sureq-js.github.io/sureq/.

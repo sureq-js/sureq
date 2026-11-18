@@ -41,6 +41,21 @@ function runNode(file: string, cwd: string, timeout: number): Promise<{ code: nu
 }
 
 describe('skill: samples', () => {
+  /*
+   * Which TypeScript compiles the samples: only the one installed in the repository, never a second one fetched here.
+   * The skill promises TypeScript 5.0, 6.0 and latest. CI's `types` job installs 5.0 and latest (matrix in
+   * .github/workflows/ci.yml) and then runs `npm run test:types` and `npm run typecheck`; this file runs in `npm test`
+   * (and in CI's `npm run coverage`), not in `test:types`, which only collects tests/types/**\/*.test-d.ts.
+   * So until that job also runs this file, the samples are compiled on the installed version alone.
+   */
+  it('skill: the sample compile check uses the installed TypeScript, 5.0 or later', () => {
+    const r = spawnSync(tsc, ['--version'], { encoding: 'utf8' });
+    expect(r.error).toBeUndefined();
+    const installed = (JSON.parse(text(join(repoRoot, 'node_modules/typescript/package.json'))) as { version: string }).version;
+    expect(r.stdout.trim()).toBe(`Version ${installed}`);
+    expect(Number(installed.split('.')[0]), `TypeScript ${installed} is older than 5.0`).toBeGreaterThanOrEqual(5);
+  });
+
   // a full type-check of core from source: seconds alone, longer under coverage beside other test files
   it('skill: every ts sample compiles with the docs compile options', { timeout: 60_000 }, () => {
     const dir = tempDir('skill-samples-');

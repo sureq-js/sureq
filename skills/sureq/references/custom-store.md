@@ -13,7 +13,7 @@ Core never touches the database directly, so everything SureQ promises rests on 
 
 The contract is `export interface Store` in `@sureq/core`. It has 38 methods: 37 required and the optional `subscribe`.
 It also has two read-only properties: `contractVersion` (set it to `STORE_CONTRACT_VERSION`) and `capabilities` (built with `defineCapabilities` and deeply frozen).
-The full signatures are in [The Store interface](../../../user-docs/04-stores/01-store-contract.md#the-store-interface).
+The full signatures are in [The Store interface](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#the-store-interface).
 
 ### Lifecycle
 
@@ -73,29 +73,29 @@ The full signatures are in [The Store interface](../../../user-docs/04-stores/01
 
 ## Rules a store must keep
 
-The full list is in [Rules every store follows](../../../user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
+The full list is in [Rules every store follows](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
 
-- **Atomic claim.** Two claimers never get the same job, so a job never runs twice at once. See [the contract](../../../user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
-- **Lease expiry and fencing.** Each claim issues a larger token, and `renew`, `complete`, `fail`, `release` and `setProgress` succeed only for the current token and an unexpired lease. See [the contract](../../../user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
-- **The clock.** Every time the store writes comes from its own clock, read in the same atomic step, never the caller's clock. See [the contract](../../../user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
-- **At most one live lease per job.** A job holds at most one lease. `claim` never takes an active job, even one whose lease has expired: `sweep` must first put it back to waiting, and the next claim issues a larger token. The old handler may still be running then; fencing refuses its writes, which is why handlers must be safe to run twice. See [the contract](../../../user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
-- **A retried run does not leak writes.** A repeat of `complete`, `fail` or `release` with the same token and the same kind returns the first outcome with `repeated: true` and changes nothing, until the job is claimed again; after that, a write with the old token is refused as `superseded`. Keep the last finishing write as a tombstone under the id, so a repeat after a delete or after a new job took the id still answers `repeated: true` and never touches the new job. Any other write with an old token is refused. See [the contract](../../../user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
+- **Atomic claim.** Two claimers never get the same job, so a job never runs twice at once. See [the contract](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
+- **Lease expiry and fencing.** Each claim issues a larger token, and `renew`, `complete`, `fail`, `release` and `setProgress` succeed only for the current token and an unexpired lease. See [the contract](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
+- **The clock.** Every time the store writes comes from its own clock, read in the same atomic step, never the caller's clock. See [the contract](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
+- **At most one live lease per job.** A job holds at most one lease. `claim` never takes an active job, even one whose lease has expired: `sweep` must first put it back to waiting, and the next claim issues a larger token. The old handler may still be running then; fencing refuses its writes, which is why handlers must be safe to run twice. See [the contract](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
+- **A retried run does not leak writes.** A repeat of `complete`, `fail` or `release` with the same token and the same kind returns the first outcome with `repeated: true` and changes nothing, until the job is claimed again; after that, a write with the old token is refused as `superseded`. Keep the last finishing write as a tombstone under the id, so a repeat after a delete or after a new job took the id still answers `repeated: true` and never touches the new job. Any other write with an old token is refused. See [the contract](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#rules-every-store-follows).
 
 ## Contract version
 
 `STORE_CONTRACT_VERSION` is 1 in this release. A store sets its `contractVersion` to it.
 Core accepts the versions in `SUPPORTED_CONTRACT_VERSIONS`. A queue checks the version before the first `open`, and a store outside that range is refused with `StoreContractVersionError` and never opened.
-The contract is experimental until 1.1, so read the core changelog before you upgrade. See [Contract version](../../../user-docs/04-stores/01-store-contract.md#contract-version).
+The contract is experimental until 1.1, so read the core changelog before you upgrade. See [Contract version](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/01-store-contract.md#contract-version).
 
 ## Build one
 
-1. Copy the template folder, [examples/store-template](../../../examples/store-template/src), and read its [README](../../../examples/store-template/README.md).
+1. Copy the template folder, [examples/store-template](https://github.com/sureq-js/sureq/tree/main/examples/store-template/src), and read its [README](https://github.com/sureq-js/sureq/blob/main/examples/store-template/README.md).
 2. Replace its toy backend with your database, and keep the store logic until the suite passes.
-3. Implement the methods in the order of the [build order](../../../user-docs/04-stores/02-writing-your-own.md#build-order). Each step ends with a group of the suite that must pass.
+3. Implement the methods in the order of the [build order](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/02-writing-your-own.md#build-order). Each step ends with a group of the suite that must pass.
 4. Run the conformance kit with `runStoreConformance` from `@sureq/store-test`.
 5. Declare your real capabilities with `defineCapabilities`, and pass the gated groups for each one you declare, such as `capabilities:notify` or `capabilities:durable`.
 
-The full guide is [Writing your own store](../../../user-docs/04-stores/02-writing-your-own.md).
+The full guide is [Writing your own store](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/02-writing-your-own.md).
 
 ## The conformance kit
 
@@ -120,4 +120,4 @@ runStoreConformance({
 
 A passing run proves the store keeps the contract under races: claims, leases, fencing, sweeping, the store clock, the duplicate rules, schedules and the worker registry.
 The report's `conformant` is true only when nothing failed, no group other than a `capabilities:` gate or `merge:core` was skipped, `concurrency` is at least 10, and the `clock` and `lease` groups ran in real time.
-Options such as `concurrency`, `iterations`, `timeScale`, `skip`, `realTime` and `report` are in [Conformance kit](../../../user-docs/04-stores/03-conformance-kit.md).
+Options such as `concurrency`, `iterations`, `timeScale`, `skip`, `realTime` and `report` are in [Conformance kit](https://github.com/sureq-js/sureq/blob/main/user-docs/04-stores/03-conformance-kit.md).

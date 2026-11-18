@@ -53,6 +53,6 @@ describe('skill: custom store', () => {
   it('skill: the template path is a real folder', () => {
     const folder = join(repoRoot, 'examples/store-template/src');
     expect(existsSync(folder) && statSync(folder).isDirectory()).toBe(true);
-    expect(page()).toMatch(/\]\((\.\.\/)+examples\/store-template(\/src)?\/?\)/);
+    expect(page()).toMatch(/\]\(https:\/\/github\.com\/sureq-js\/sureq\/tree\/main\/examples\/store-template(\/src)?\/?\)/);
   });
 });

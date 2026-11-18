@@ -5,7 +5,7 @@ A `Duration` is whole milliseconds or a string with a unit: `'250ms'`, `'30s'`, 
 A bad option throws `InvalidOptionError` at once, listing every problem.
 
 Not listed here: `reconnect`, `maxBulkSize`, `order`, `filterTimeoutMs`, `maxResultBytes`, `maxErrorBytes`, `storeStacks`, the polling and upkeep tuning, `metrics`, `alerts`, the `retention` and `scheduler` settings, and progress limits.
-For those, and the full detail of every row, see the [reference pages](../../../user-docs/03-reference/01-queue.md).
+For those, and the full detail of every row, see the [reference pages](https://github.com/sureq-js/sureq/blob/main/user-docs/03-reference/01-queue.md).
 
 ## Queue
 

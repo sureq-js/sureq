@@ -6,12 +6,17 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { repoRoot } from '../helpers/dev-docs.js';
 import { skillFiles } from '../helpers/skill-files.js';
 
-const SKIP_MESSAGE = 'skills CLI not available';
+/**
+ * The skills CLI is pinned: an unpinned `npx skills` would run whatever was published last, and this test parses its
+ * `--json` output. Raise the version on purpose, after checking the install still works.
+ */
+const SKILLS_CLI = 'skills@1.9.0';
+const SKIP_MESSAGE = `${SKILLS_CLI} CLI not available`;
 const env = { ...process.env, DISABLE_TELEMETRY: '1', DO_NOT_TRACK: '1', npm_config_yes: 'true' };
 
-/** Runs `npx --yes skills <args>` in a folder; `null` when npx itself cannot run. */
+/** Runs `npx --yes skills@<pinned> <args>` in a folder; `null` when npx itself cannot run. */
 const skills = (cwd: string, args: string[]) => {
-  const run = spawnSync('npx', ['--yes', 'skills', ...args], { cwd, env, encoding: 'utf8', timeout: 150_000 });
+  const run = spawnSync('npx', ['--yes', SKILLS_CLI, ...args], { cwd, env, encoding: 'utf8', timeout: 150_000 });
   return run.error ? null : run;
 };
 
