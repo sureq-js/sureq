@@ -17,6 +17,7 @@ Before 1.0, a minor release (0.x) could break the API; every break is listed bel
 - A bare number is refused as a job's `keep` (`keep: 1000` was 1000 milliseconds, while the queue `retention` reads a number as a count). Write `'1000ms'` or `{ age: 1000 }`.
 
 **Added**
+- An agent skill, `skills/sureq`, installable with `npx skills add sureq-js/sureq --skill sureq`.
 - New error class `UnsupportedRuntimeError` (`UNSUPPORTED_RUNTIME`), thrown on first use (constructing a `Queue` or `Producer`) on a runtime it does not support; importing the package does not throw. Its default message is "SureQ requires Node.js; this runtime is not supported".
 - New queue option `storeCallTimeout` (default `30s`): every store call has a deadline. A call that has not answered by then fails with a retryable `StoreUnavailableError` (`outcomeUnknown` for a write) and starts reconnecting, so a hung store call no longer stalls the sweeper, a worker or an admin call for good; its late answer is ignored.
 - A versioning and deprecation policy in the `@sureq/core` README: semver applies to the public API; the store contract may change in a minor release until it is declared stable; a deprecated API stays for at least one minor release before removal and is listed here.
