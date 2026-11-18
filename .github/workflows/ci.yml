@@ -70,3 +70,5 @@ jobs:
       - run: npm i --no-save typescript@${{ matrix.typescript }}
       - run: npm run test:types
       - run: npm run typecheck
+      # the skill samples compile with the TypeScript this job installed
+      - run: npm exec -w @sureq/core -- vitest run tests/skill/samples.test.ts

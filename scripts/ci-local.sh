@@ -39,6 +39,7 @@ for ts in 5.0 latest; do
   step npm install --no-save "typescript@$ts"
   step npm run test:types
   step npm run typecheck
+  step npm exec -w @sureq/core -- vitest run tests/skill/samples.test.ts
 done
 step npm ci
 
