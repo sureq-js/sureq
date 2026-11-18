@@ -37,7 +37,10 @@ export interface QueueOptions<D = unknown> extends TimeoutOptions, ShutdownOptio
   filterTimeoutMs?: number;
   /** How long a job keeps its id: while `'pending'` (default) or until removed (`'retained'`). */
   uniqueWhile?: 'pending' | 'retained';
-  /** Any object implementing the store contract, shareable between queues. Default: a private MemoryStore owned by this queue. */
+  /**
+   * Any object implementing the store contract, shareable between queues. Default: a private MemoryStore owned by this queue.
+   * @beta The store contract is experimental until 1.1: a custom store may change in a minor release.
+   */
   store?: Store;
   /** Isolates apps or environments sharing one store. Default `'default'`. */
   namespace?: string;
@@ -1068,6 +1071,9 @@ export type ProducerOptions<D = unknown> = Pick<
   | 'namespace' | 'id' | 'onDuplicate' | 'uniqueWhile' | 'defaultJobOptions' | 'order' | 'maxPayloadBytes' | 'maxBulkSize' | 'logger'
   | 'reconnect' | 'onDisconnected' | 'maxWait' | 'maxBufferedAdds' | 'filter' | 'filterTimeoutMs'
 > & {
+  /**
+   * @beta The store contract is experimental until 1.1.
+   */
   store: Store;
   /** @internal Test seam for reconnect jitter; default Math.random. */
   random?: (() => number) | undefined;

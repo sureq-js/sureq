@@ -4,12 +4,17 @@ All notable changes to `@sureq/core`. From 1.0, semver applies to the public API
 The store contract stays experimental and may change in a minor release until it is declared stable.
 Before 1.0, a minor release (0.x) could break the API; every break is listed below.
 
-## 1.0.0-rc.1 - 2026-11-17
+## 1.0.0 - 2026-11-17
 
 **Upgrading from 0.3**
 - 0.3 and 1.0 store jobs in the same format, so pods on 0.3.x and 1.0 can share one store during a rolling deploy, and neither goes into degraded mode.
 - A store adapter built for 0.3 declares contract version 2, which 1.0 refuses. Set its `contractVersion` to `STORE_CONTRACT_VERSION` (now 1) before the rollout; the contract itself did not change (see Changed).
 - Releases with different major versions are never adjacent, so while both run, every pod with a running worker emits `versionSkew` (`{ workers }`) naming the other release's workers. The event is advisory and blocks nothing; it stops once every pod runs 1.0. Finish the rollout instead of leaving both releases running.
+
+**Changed (API decisions before 1.0)**
+- The store contract (`Store`, its request and result types, `STORE_CONTRACT_VERSION`, `MemoryStore`'s contract methods and the `store` option) is marked beta: experimental until 1.1, as the docs say.
+- `Schedule` is its own type with the fields the docs list. It no longer exposes the store's `rev`; `createdAt` and `updatedAt` are documented.
+- A bare number is refused as a job's `keep` (`keep: 1000` was 1000 milliseconds, while the queue `retention` reads a number as a count). Write `'1000ms'` or `{ age: 1000 }`.
 
 **Added**
 - New error class `UnsupportedRuntimeError` (`UNSUPPORTED_RUNTIME`), thrown on first use (constructing a `Queue` or `Producer`) on a runtime it does not support; importing the package does not throw. Its default message is "SureQ requires Node.js; this runtime is not supported".

@@ -24,6 +24,8 @@ jobs:
             const v = ['core', 'store-test'].map((d) => require('./packages/' + d + '/package.json').version);
             if (new Set(v).size !== 1) { console.error('package versions differ: ' + v.join(', ')); process.exit(1); }
           "
+      # Trusted publishing (no token) needs npm 11.5.1 or newer; the Node 22 image ships an older npm.
+      - run: npm install -g npm@latest
       - run: npm ci
       - run: npm run build
       - run: npm run test:dist
@@ -37,6 +39,5 @@ jobs:
             *-*) echo "tag=next" >> "$GITHUB_OUTPUT" ;;
             *) echo "tag=latest" >> "$GITHUB_OUTPUT" ;;
           esac
+      # Publishes through the trusted publisher set up on npmjs.com: no token is read here.
       - run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }} --registry=https://registry.npmjs.org/ -w @sureq/core -w @sureq/store-test
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

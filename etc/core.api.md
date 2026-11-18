@@ -25,7 +25,7 @@ export interface AddOptions<D = unknown> extends TimeoutOptions {
     uniqueWhile?: 'pending' | 'retained' | undefined;
 }
 
-// @public
+// @beta
 export type AddOutcome = {
     status: 'added';
     job: JobRecord;
@@ -221,14 +221,14 @@ export type BulkOutcome<D = unknown, R = unknown> = ({
     error: SureQError;
 };
 
-// @public
+// @beta
 export interface CancelRequest {
     history?: HistoryOption;
     id: string;
     retention?: RetentionDirective;
 }
 
-// @public
+// @beta
 export type CancelResult = {
     ok: true;
     previousState: 'waiting' | 'delayed' | 'active';
@@ -250,18 +250,18 @@ export class CapabilityError extends SureQError {
     readonly code = "UNSUPPORTED_CAPABILITY";
 }
 
-// @public
+// @beta
 export interface ClaimBlocked {
     reason: 'paused';
 }
 
-// @public
+// @beta
 export type ClaimHistoryOption = false | {
     max?: number;
     host?: string | null;
 };
 
-// @public
+// @beta
 export interface ClaimRequest {
     claimId: string;
     history?: ClaimHistoryOption;
@@ -275,7 +275,7 @@ export interface ClaimRequest {
     workerId: string;
 }
 
-// @public
+// @beta
 export interface ClaimResult {
     blocked?: ClaimBlocked;
     jobs: JobRecord[];
@@ -288,7 +288,7 @@ export interface ClaimResult {
 // @public
 export type CleanableState = 'completed' | 'failed' | 'cancelled' | 'waiting' | 'delayed';
 
-// @public
+// @beta
 export interface CleanRequest {
     excludeNames?: string[];
     keepLast?: number;
@@ -299,13 +299,13 @@ export interface CleanRequest {
     state: CleanableState;
 }
 
-// @public
+// @beta
 export interface CleanResult {
     remaining: boolean;
     removed: number;
 }
 
-// @public
+// @beta
 export interface CompleteRequest {
     history?: HistoryOption;
     id: string;
@@ -314,7 +314,7 @@ export interface CompleteRequest {
     token: number;
 }
 
-// @public
+// @beta
 export type CompleteResult = {
     ok: true;
     now: StoreTime;
@@ -345,7 +345,9 @@ export function consoleLogger(opts?: {
 
 // @public
 export interface DeadLetterInfo {
+    // @beta
     at: StoreTime;
+    // @beta
     reason: DeadLetterReason;
 }
 
@@ -355,13 +357,13 @@ export type DeadLetterReason = 'exhausted' | 'unrecoverable' | 'retryRejected' |
 // @public
 export function defineCapabilities(c: CapabilitiesInput): StoreCapabilities;
 
-// @public
+// @beta
 export interface DeleteScheduleRequest {
     expectedRev?: number;
     key: string;
 }
 
-// @public
+// @beta
 export type DeleteScheduleResult = {
     deleted: true;
 } | {
@@ -417,7 +419,7 @@ export type DuplicateRule<D = unknown> = 'ignore' | 'replace' | 'reject' | ((exi
 // @public
 export type Duration = number | `${number}${'ms' | 's' | 'm' | 'h' | 'd'}`;
 
-// @public
+// @beta
 export interface EnsureNamespaceMetaRequest {
     current: number;
     maxReadable: number;
@@ -425,7 +427,7 @@ export interface EnsureNamespaceMetaRequest {
     sureqVersion: string;
 }
 
-// @public
+// @beta
 export interface EnsureNamespaceMetaResult {
     created: boolean;
     formatVersion: number;
@@ -458,7 +460,7 @@ export interface EventOrigin {
     workerId?: string;
 }
 
-// @public
+// @beta
 export interface FailRequest {
     deadLetter?: false | {
         reason?: Exclude<DeadLetterReason, 'crashLimit' | 'legacy'>;
@@ -472,7 +474,7 @@ export interface FailRequest {
     token: number;
 }
 
-// @public
+// @beta
 export type FailResult = {
     ok: true;
     state: 'delayed' | 'failed';
@@ -484,7 +486,7 @@ export type FailResult = {
 // @public
 export type FailureReason = 'attempts-exhausted' | 'unrecoverable' | 'not-retryable';
 
-// @public
+// @beta
 export type FencedRejection = {
     ok: false;
     reason: 'superseded' | 'expired' | 'not-active';
@@ -519,7 +521,7 @@ export type FilterVerdict = true | false | string | {
     details?: unknown;
 };
 
-// @public
+// @beta
 export interface FireScheduleRequest {
     expectedRev: number;
     job: NewJob;
@@ -528,7 +530,7 @@ export interface FireScheduleRequest {
     nextRunAt?: StoreTime;
 }
 
-// @public
+// @beta
 export type FireScheduleResult = {
     outcome: 'fired';
     jobId: string;
@@ -562,14 +564,14 @@ export interface FormatSupport {
     minReadable: number;
 }
 
-// @public
+// @beta
 export interface GetAttemptsRequest {
     cursor?: string;
     id: string;
     limit?: number;
 }
 
-// @public
+// @beta
 export interface GetAttemptsResult {
     attempts: StoredAttempt[];
     nextCursor: string | null;
@@ -626,7 +628,7 @@ export interface HealthWarning {
     message: string;
 }
 
-// @public
+// @beta
 export interface HeartbeatWorkerRequest {
     activeJobs: number;
     concurrency: number;
@@ -635,7 +637,7 @@ export interface HeartbeatWorkerRequest {
     workerId: string;
 }
 
-// @public
+// @beta
 export type HistoryOption = false | {
     max?: number;
 };
@@ -818,7 +820,7 @@ export type JobProgress = {
     updatedAt: number;
 };
 
-// @public
+// @beta
 export interface JobRecord {
     attempt: number;
     attemptsTruncated: number;
@@ -942,7 +944,7 @@ export interface LeaseOptions {
     leaseDurationByName?: Record<string, Duration> | undefined;
 }
 
-// @public
+// @beta
 export interface ListDueSchedulesResult {
     due: ScheduleRecord[];
     nextDueAt: StoreTime | null;
@@ -962,7 +964,7 @@ export class ListenerError extends SureQError {
     readonly event: string;
 }
 
-// @public
+// @beta
 export interface ListRequest {
     deadLetter?: {
         reason?: DeadLetterReason;
@@ -976,19 +978,19 @@ export interface ListRequest {
     state: JobState;
 }
 
-// @public
+// @beta
 export interface ListSchedulesRequest {
     cursor?: string;
     limit: number;
 }
 
-// @public
+// @beta
 export interface ListSchedulesResult {
     nextCursor: string | null;
     schedules: ScheduleRecord[];
 }
 
-// @public
+// @beta
 export interface ListWorkersResult {
     now: StoreTime;
     workers: WorkerRecord[];
@@ -1008,7 +1010,7 @@ export interface Logger {
 // @public
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-// @public
+// @beta
 export class MemoryStore implements Store {
     constructor(opts?: {
         clock?: () => number;
@@ -1145,10 +1147,10 @@ export type NameResult<N extends NameMap, K extends keyof N> = N[K] extends {
     result: infer X;
 } ? X : unknown;
 
-// @public
+// @beta
 export type NamespaceScope = Pick<Scope, 'namespace'>;
 
-// @public
+// @beta
 export interface NewJob {
     backoff?: Payload | null;
     data: Payload;
@@ -1170,16 +1172,16 @@ export interface NewJob {
     uniqueWhile?: 'pending' | 'retained';
 }
 
-// @public
+// @beta
 export type NewSchedule = Omit<ScheduleRecord, 'namespace' | 'queue' | 'rev' | 'createdAt' | 'updatedAt'>;
 
-// @public
+// @beta
 export interface ObliterateRequest {
     force?: boolean;
     limit: number;
 }
 
-// @public
+// @beta
 export interface ObliterateResult {
     done: boolean;
     removed: number;
@@ -1200,7 +1202,7 @@ export interface PauseEvent {
 // @public
 export type PauseScope = 'local' | 'global';
 
-// @public
+// @beta
 export type Payload = string | Uint8Array;
 
 // @public
@@ -1270,13 +1272,13 @@ export type ProducerOptions<D = unknown> = Pick<QueueOptions<D>, 'namespace' | '
 // @public
 export type ProgressObject = Record<string, unknown>;
 
-// @public
+// @beta
 export interface PutScheduleRequest {
     expectedRev: number | null;
     schedule: NewSchedule;
 }
 
-// @public
+// @beta
 export type PutScheduleResult = {
     ok: true;
     schedule: ScheduleRecord;
@@ -1640,6 +1642,7 @@ export interface QueueOptions<D = unknown> extends TimeoutOptions, ShutdownOptio
     retention?: RetentionOptions;
     scheduler?: SchedulerOptions;
     signals?: readonly ProcessSignal[];
+    // @beta
     store?: Store;
     storeCallTimeout?: Duration;
     storeStacks?: boolean;
@@ -1676,7 +1679,7 @@ export type RedriveOutcome = {
     reason: 'not-failed' | 'not-found' | 'duplicate-id';
 };
 
-// @public
+// @beta
 export type RedriveRequest = ({
     ids: string[];
     filter?: never;
@@ -1701,7 +1704,7 @@ export interface RedriveSummary {
     skippedIds: string[];
 }
 
-// @public
+// @beta
 export interface RegisterWorkerRequest {
     concurrency: number;
     formatVersion: number;
@@ -1716,13 +1719,13 @@ export interface RegisterWorkerRequest {
     workerId: string;
 }
 
-// @public
+// @beta
 export interface RegisterWorkerResult {
     now: StoreTime;
     startedAt: StoreTime;
 }
 
-// @public
+// @beta
 export interface ReleaseRequest {
     delayMs?: number;
     handlerStarted: boolean;
@@ -1733,7 +1736,7 @@ export interface ReleaseRequest {
     token: number;
 }
 
-// @public
+// @beta
 export type ReleaseResult = {
     ok: true;
     state: 'waiting' | 'delayed';
@@ -1742,7 +1745,7 @@ export type ReleaseResult = {
     repeated?: true;
 } | FencedRejection;
 
-// @public
+// @beta
 export type RemoveResult = {
     removed: true;
     previousState: JobState;
@@ -1751,7 +1754,7 @@ export type RemoveResult = {
     reason: 'not-found' | 'active';
 };
 
-// @public
+// @beta
 export interface RenewRequest {
     batchId?: string;
     id: string;
@@ -1760,7 +1763,7 @@ export interface RenewRequest {
     token: number;
 }
 
-// @public
+// @beta
 export type RenewResult = {
     ok: true;
     expiresAt: StoreTime;
@@ -1780,7 +1783,7 @@ export class ResultTooLargeError extends SureQError {
     readonly size: number;
 }
 
-// @public
+// @beta
 export interface RetentionDirective {
     discard?: boolean;
     retainMs?: number;
@@ -1808,13 +1811,34 @@ export class RetryIfError extends SureQError {
 }
 
 // @public
-export type Schedule<D = unknown> = Omit<ScheduleRecord, 'template'> & {
+export interface Schedule<D = unknown> {
+    anchorAt?: number;
+    createdAt: number;
+    cron?: string;
+    definitionHash: string;
+    definitionVersion: number;
+    everyMs?: number;
+    formatVersion: number;
+    key: string;
+    kind: 'cron' | 'every';
+    lastFiredFor: number | null;
+    lastJobId: string | null;
+    maxQueued: number;
+    namespace: string;
+    nextRunAt: number;
+    overlap: OverlapPolicy;
+    paused: boolean;
+    queue: string;
+    queuedTicks: number[];
+    runCount: number;
     template: {
         name: string | null;
         data: D;
         opts: Record<string, unknown>;
     };
-};
+    tz?: string;
+    updatedAt: number;
+}
 
 // @public
 export class ScheduleConflictError extends SureQError {
@@ -1842,7 +1866,7 @@ export class ScheduleNotFoundError extends SureQError {
     readonly key: string;
 }
 
-// @public
+// @beta
 export interface ScheduleRecord {
     anchorAt?: StoreTime;
     createdAt: StoreTime;
@@ -1898,7 +1922,7 @@ export type ScheduleTiming = {
     tz?: never;
 };
 
-// @public
+// @beta
 export interface Scope {
     namespace: string;
     queue: string;
@@ -1931,7 +1955,7 @@ export interface SerializeOptions {
     storeStacks: boolean;
 }
 
-// @public
+// @beta
 export interface SetProgressRequest {
     field?: 'progress' | 'batchProgress';
     id: string;
@@ -1939,7 +1963,7 @@ export interface SetProgressRequest {
     token: number;
 }
 
-// @public
+// @beta
 export type SetProgressResult = {
     ok: true;
     now: StoreTime;
@@ -1963,7 +1987,7 @@ export class StalledJobError extends SureQError {
     readonly code = "JOB_STALLED";
 }
 
-// @public
+// @beta
 export interface StatsResult {
     counts: JobCounts;
     deadLetters: number;
@@ -1971,7 +1995,7 @@ export interface StatsResult {
     oldestWaitingRunAt: StoreTime | null;
 }
 
-// @public
+// @beta
 export interface Store {
     add(scope: Scope, jobs: NewJob[], opts?: {
         atomic?: boolean;
@@ -2036,7 +2060,7 @@ export interface Store {
     update(scope: Scope, req: UpdateRequest): Promise<UpdateResult>;
 }
 
-// @public
+// @beta
 export const STORE_CONTRACT_VERSION: number;
 
 // @public
@@ -2078,7 +2102,7 @@ export class StoreContractVersionError extends StoreError {
     readonly store: number;
 }
 
-// @public
+// @beta
 export interface StoredAttempt {
     attempt: number;
     batchId: string | null;
@@ -2108,7 +2132,7 @@ export type StoredBackoff = {
     jitter: Jitter;
 };
 
-// @public
+// @beta
 export interface StoredProgress {
     updatedAt: StoreTime;
     value: Payload;
@@ -2161,7 +2185,7 @@ export class StoreFormatError extends SureQError {
     readonly sureqVersion?: string;
 }
 
-// @public
+// @beta
 export interface StoreMeta {
     createdBy: string;
     formatVersion: number;
@@ -2188,7 +2212,7 @@ export class StoreRequestError extends StoreError {
     readonly code = "STORE_BAD_REQUEST";
 }
 
-// @public
+// @beta
 export type StoreTime = number;
 
 // @public
@@ -2197,7 +2221,7 @@ export class StoreUnavailableError extends StoreError {
     readonly code = "STORE_UNAVAILABLE";
 }
 
-// @public
+// @beta
 export const SUPPORTED_CONTRACT_VERSIONS: readonly [number, number];
 
 // @public
@@ -2223,7 +2247,7 @@ export interface SureQErrorJSON {
     name: string;
 }
 
-// @public
+// @beta
 export interface SweepRequest {
     deadLetter?: false | {
         keepMs?: number;
@@ -2237,13 +2261,13 @@ export interface SweepRequest {
     retention?: RetentionDirective;
 }
 
-// @public
+// @beta
 export interface SweepResult {
     now: StoreTime;
     swept: SweptJob[];
 }
 
-// @public
+// @beta
 export interface SweptJob {
     action: 'requeued' | 'failed';
     attempt: number;
@@ -2286,7 +2310,7 @@ export class UnsupportedRuntimeError extends SureQError {
     readonly code = "UNSUPPORTED_RUNTIME";
 }
 
-// @public
+// @beta
 export interface UpdateRequest {
     expectedRev: number;
     id: string;
@@ -2298,7 +2322,7 @@ export interface UpdateRequest {
     };
 }
 
-// @public
+// @beta
 export type UpdateResult = {
     ok: true;
     job: JobRecord;
@@ -2379,7 +2403,7 @@ export interface WorkerOptions extends PollingOptions, LeaseOptions, TimeoutOpti
     workerId?: string | undefined;
 }
 
-// @public
+// @beta
 export interface WorkerRecord extends Omit<RegisterWorkerRequest, 'names'> {
     activeJobs: number;
     lastHeartbeatAt: StoreTime;

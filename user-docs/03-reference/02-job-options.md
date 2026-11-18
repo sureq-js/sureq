@@ -108,7 +108,7 @@ The `maxAttempts`, `backoff` and `timeout` values are stored on the job, so ever
 await queue.add(data, { keep: { completed: 0, failed: '30d' } })
 ```
 
-A `JobKeep` is `true` (forever), `false` or `0` (keep none), a `Duration`, or `{ age }`. A single job has no count. A job with its own `keep.failed` is never dead-lettered. Keep none on a job added with `uniqueWhile: 'retained'` is an `InvalidOptionError`. See [retention](01-queue.md#retention).
+A `JobKeep` is `true` (forever), `false` or `0` (keep none), a `Duration` such as `'1d'`, or `{ age }`. A single job has no count. A bare number is refused on a job, because on a queue `retention` the same number means a count: write `'1000ms'` or `{ age: 1000 }` for time. A job with its own `keep.failed` is never dead-lettered. Keep none on a job added with `uniqueWhile: 'retained'` is an `InvalidOptionError`. See [retention](01-queue.md#retention).
 
 ## Job defaults
 
