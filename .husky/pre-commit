@@ -1,0 +1,5 @@
+#!/bin/sh
+# Before each commit: lint the staged files, then the unit tests.
+# The full CI-equivalent run happens on push (.husky/pre-push).
+npx --no -- lint-staged
+npm test
