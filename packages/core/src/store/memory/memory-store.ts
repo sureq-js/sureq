@@ -130,6 +130,7 @@ const UNSAFE_KEYS = ['state', 'lease', 'token', 'rev', 'crashCount', 'maxAttempt
 /**
  * The built-in in-memory store. Every operation is one synchronous critical section inside an
  * async method.
+ * @beta It implements the store contract, which is experimental until 1.1.
  */
 export class MemoryStore implements Store {
   /** The contract version this store implements: `STORE_CONTRACT_VERSION`. */
@@ -156,12 +157,18 @@ export class MemoryStore implements Store {
     this.#finalsTtl = parseDuration(opts.finalsTtl ?? DEFAULT_FINALS_TTL_MS, 'finalsTtl');
   }
 
-  /** Start serving calls. Nothing to connect to; calls before `open` throw `StoreRequestError`. */
+  /**
+   * Start serving calls. Nothing to connect to; calls before `open` throw `StoreRequestError`.
+   * @beta
+   */
   async open(): Promise<void> {
     return this.#run('open', () => void (this.#opened = true));
   }
 
-  /** Stops serving calls and drops every subscription; the data stays (the store object is the database). */
+  /**
+   * Stops serving calls and drops every subscription; the data stays (the store object is the database).
+   * @beta
+   */
   async close(): Promise<void> {
     return this.#run('close', () => {
       this.#opened = false;
@@ -169,7 +176,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Store time in integer ms; never goes backwards. */
+  /**
+   * Store time in integer ms; never goes backwards.
+   * @beta
+   */
   async now(): Promise<number> {
     return this.#run('now', () => {
       this.#ready('now');
@@ -180,22 +190,32 @@ export class MemoryStore implements Store {
   /**
    * Insert jobs in input order under the duplicate rules (`onDuplicate`, `uniqueWhile`). A finished record
    * whose id is reused moves to `id#<seq>`, where nothing reads it. `atomic`: a rejected input writes nothing.
+   * @beta
    */
   async add(scope: Scope, jobs: NewJob[], opts?: { atomic?: boolean }): Promise<AddOutcome[]> {
     return this.#run('add', () => this.#add(scope, jobs, opts));
   }
 
-  /** One job by id, or null. */
+  /**
+   * One job by id, or null.
+   * @beta
+   */
   async get(scope: Scope, id: string): Promise<JobRecord | null> {
     return this.#run('get', () => this.#get(scope, id));
   }
 
-  /** One state's records, paged, by `orderBy` (default `seq`); ties by `seq` in the same direction. */
+  /**
+   * One state's records, paged, by `orderBy` (default `seq`); ties by `seq` in the same direction.
+   * @beta
+   */
   async list(scope: Scope, req: ListRequest): Promise<JobRecord[]> {
     return this.#run('list', () => this.#list(scope, req));
   }
 
-  /** Jobs per state (due delayed jobs count as waiting); `blocked` is every waiting job while paused. */
+  /**
+   * Jobs per state (due delayed jobs count as waiting); `blocked` is every waiting job while paused.
+   * @beta
+   */
   async counts(scope: Scope): Promise<JobCounts> {
     return this.#run('counts', () => this.#counts(scope));
   }
@@ -205,27 +225,40 @@ export class MemoryStore implements Store {
    * oldest (fifo) or newest (lifo) `seq`. A record with an unreadable format is skipped and left as it was.
    * A repeat with the same `workerId` and `claimId` returns that claim's still-live jobs (`recovered: true`)
    * and claims nothing new; a paused queue claims nothing and reports `blocked` when waiting jobs are held back.
+   * @beta
    */
   async claim(scope: Scope, req: ClaimRequest): Promise<ClaimResult> {
     return this.#run('claim', () => this.#claim(scope, req));
   }
 
-  /** Extend a live lease to `now + leaseMs` (it may shrink); owner, token and attempt stay. */
+  /**
+   * Extend a live lease to `now + leaseMs` (it may shrink); owner, token and attempt stay.
+   * @beta
+   */
   async renew(scope: Scope, req: RenewRequest): Promise<RenewResult> {
     return this.#run('renew', () => this.#renew(scope, req));
   }
 
-  /** Finish an active job. A repeat with the same token returns `repeated: true` and changes nothing. */
+  /**
+   * Finish an active job. A repeat with the same token returns `repeated: true` and changes nothing.
+   * @beta
+   */
   async complete(scope: Scope, req: CompleteRequest): Promise<CompleteResult> {
     return this.#run('complete', () => this.#complete(scope, req));
   }
 
-  /** Fail an attempt: to `delayed` when `retryInMs` is given and attempts remain, else to `failed`. */
+  /**
+   * Fail an attempt: to `delayed` when `retryInMs` is given and attempts remain, else to `failed`.
+   * @beta
+   */
   async fail(scope: Scope, req: FailRequest): Promise<FailResult> {
     return this.#run('fail', () => this.#fail(scope, req));
   }
 
-  /** Give a claimed job back: `waiting` now, or `delayed` by `delayMs`; the token is kept. */
+  /**
+   * Give a claimed job back: `waiting` now, or `delayed` by `delayMs`; the token is kept.
+   * @beta
+   */
   async release(scope: Scope, req: ReleaseRequest): Promise<ReleaseResult> {
     return this.#run('release', () => this.#release(scope, req));
   }
@@ -233,27 +266,40 @@ export class MemoryStore implements Store {
   /**
    * Recover up to `limit` active jobs whose lease expired, oldest expiry first: each crash counts once;
    * the job is requeued, or failed with `poisonError` at `maxCrashes` (else `failError` when attempts are used up).
+   * @beta
    */
   async sweep(scope: Scope, req: SweepRequest): Promise<SweepResult> {
     return this.#run('sweep', () => this.#sweep(scope, req));
   }
 
-  /** Edit a waiting or delayed job whose `rev` matches; `seq` is kept. */
+  /**
+   * Edit a waiting or delayed job whose `rev` matches; `seq` is kept.
+   * @beta
+   */
   async update(scope: Scope, req: UpdateRequest): Promise<UpdateResult> {
     return this.#run('update', () => this.#update(scope, req));
   }
 
-  /** Delete a job that is not active, or a superseded dead letter by its `id#seq`; a finalised job leaves a tombstone for `finalsTtl`. */
+  /**
+   * Delete a job that is not active, or a superseded dead letter by its `id#seq`; a finalised job leaves a tombstone for `finalsTtl`.
+   * @beta
+   */
   async remove(scope: Scope, req: { id: string }): Promise<RemoveResult> {
     return this.#run('remove', () => this.#remove(scope, req));
   }
 
-  /** Move a waiting, delayed or active job to cancelled and clear its lease; without `history` it only closes an open attempt row. */
+  /**
+   * Move a waiting, delayed or active job to cancelled and clear its lease; without `history` it only closes an open attempt row.
+   * @beta
+   */
   async cancel(scope: Scope, req: CancelRequest): Promise<CancelResult> {
     return this.#run('cancel', () => this.#cancel(scope, req));
   }
 
-  /** Set the queue's pause flag (queue state: no job `rev` changes). */
+  /**
+   * Set the queue's pause flag (queue state: no job `rev` changes).
+   * @beta
+   */
   async setPaused(scope: Scope, paused: boolean): Promise<{ changed: boolean }> {
     return this.#run('setPaused', () => {
       checkPaused(paused);
@@ -265,17 +311,26 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Read the queue's pause flag. */
+  /**
+   * Read the queue's pause flag.
+   * @beta
+   */
   async isPaused(scope: Scope): Promise<boolean> {
     return this.#run('isPaused', () => this.#begin('isPaused', scope).data.paused);
   }
 
-  /** Counts, the oldest claimable waiting `runAt` (null while paused) and the dead-letter count, in one critical section. */
+  /**
+   * Counts, the oldest claimable waiting `runAt` (null while paused) and the dead-letter count, in one critical section.
+   * @beta
+   */
   async stats(scope: Scope, req: Record<string, never>): Promise<StatsResult> {
     return this.#run('stats', () => this.#stats(scope, req));
   }
 
-  /** Create (`expectedRev: null`) or replace a schedule whose `rev` matches; the store stamps scope, `rev` and timestamps. */
+  /**
+   * Create (`expectedRev: null`) or replace a schedule whose `rev` matches; the store stamps scope, `rev` and timestamps.
+   * @beta
+   */
   async putSchedule(scope: Scope, req: PutScheduleRequest): Promise<PutScheduleResult> {
     return this.#run('putSchedule', () => {
       checkPutSchedule(req);
@@ -284,7 +339,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** One schedule by key, or null. */
+  /**
+   * One schedule by key, or null.
+   * @beta
+   */
   async getSchedule(scope: Scope, req: { key: string }): Promise<ScheduleRecord | null> {
     return this.#run('getSchedule', () => {
       checkScheduleKey('getSchedule', req);
@@ -292,7 +350,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** One page of schedules in key order. */
+  /**
+   * One page of schedules in key order.
+   * @beta
+   */
   async listSchedules(scope: Scope, req: ListSchedulesRequest): Promise<ListSchedulesResult> {
     return this.#run('listSchedules', () => {
       checkListSchedules(req);
@@ -300,7 +361,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Delete a schedule, only when its `rev` matches if `expectedRev` is given. */
+  /**
+   * Delete a schedule, only when its `rev` matches if `expectedRev` is given.
+   * @beta
+   */
   async deleteSchedule(scope: Scope, req: DeleteScheduleRequest): Promise<DeleteScheduleResult> {
     return this.#run('deleteSchedule', () => {
       checkDeleteSchedule(req);
@@ -308,7 +372,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** One page of a job's attempt records (live or history key), by token; `truncated` is the job's count of records the cap dropped. */
+  /**
+   * One page of a job's attempt records (live or history key), by token; `truncated` is the job's count of records the cap dropped.
+   * @beta
+   */
   async getAttempts(scope: Scope, req: GetAttemptsRequest): Promise<GetAttemptsResult> {
     return this.#run('getAttempts', () => {
       checkGetAttempts(req);
@@ -325,12 +392,16 @@ export class MemoryStore implements Store {
   /**
    * Move failed jobs back to waiting (or delayed by `delayMs`), by ids in request order or by a dead-letter filter,
    * oldest dead letter first. Each job is one conditional write: only a failed job moves; `seq`, `token` and attempt rows stay.
+   * @beta
    */
   async redrive(scope: Scope, req: RedriveRequest): Promise<RedriveOutcome[]> {
     return this.#run('redrive', () => this.#redrive(scope, req));
   }
 
-  /** Due schedules by store time, plus the earliest `nextRunAt` of any schedule that is not paused. */
+  /**
+   * Due schedules by store time, plus the earliest `nextRunAt` of any schedule that is not paused.
+   * @beta
+   */
   async listDueSchedules(scope: Scope, req: { limit: number }): Promise<ListDueSchedulesResult> {
     return this.#run('listDueSchedules', () => {
       checkListDue(req);
@@ -339,7 +410,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** One tick in one critical section: the overlap read, the job insert and the schedule write. */
+  /**
+   * One tick in one critical section: the overlap read, the job insert and the schedule write.
+   * @beta
+   */
   async fireSchedule(scope: Scope, req: FireScheduleRequest): Promise<FireScheduleResult> {
     return this.#run('fireSchedule', () => {
       checkFire(req, this.capabilities.limits);
@@ -366,6 +440,7 @@ export class MemoryStore implements Store {
    * Delete up to `limit` jobs of one state by the request's mode (age, `retainExpired` or `keepLast`), each with its
    * attempt rows and the superseded records of its id (`id#seq`) that are not dead letters; `retainExpired` also matches
    * those superseded records by their own expiry, and the age mode of `failed` matches superseded dead letters.
+   * @beta
    */
   async clean(scope: Scope, req: CleanRequest): Promise<CleanResult> {
     return this.#run('clean', () => {
@@ -404,6 +479,7 @@ export class MemoryStore implements Store {
    * Delete the whole queue, `limit` jobs per call. The first call checks for active jobs (refused without `force`)
    * and sets the marker; the call that deletes the last job also deletes history, schedules and settings and clears it.
    * The seq and token counters are kept, so a re-added id never reuses a token.
+   * @beta
    */
   async obliterate(scope: Scope, req: ObliterateRequest): Promise<ObliterateResult> {
     return this.#run('obliterate', () => {
@@ -429,12 +505,16 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Write an active job's progress, fenced by its token. */
+  /**
+   * Write an active job's progress, fenced by its token.
+   * @beta
+   */
   async setProgress(scope: Scope, req: SetProgressRequest): Promise<SetProgressResult> { return this.#run('setProgress', () => this.#setProgress(scope, req)); }
 
   /**
    * Create the namespace's format record at `current`, or raise a readable older one to `current`; never lowers it,
    * and writes nothing when the stored format is outside what the caller reads.
+   * @beta
    */
   async ensureNamespaceMeta(ns: NamespaceScope, req: EnsureNamespaceMetaRequest): Promise<EnsureNamespaceMetaResult> {
     return this.#run('ensureNamespaceMeta', () => {
@@ -454,7 +534,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** The namespace's format record, or null when none exists. */
+  /**
+   * The namespace's format record, or null when none exists.
+   * @beta
+   */
   async getNamespaceMeta(ns: NamespaceScope): Promise<StoreMeta | null> {
     return this.#run('getNamespaceMeta', () => {
       this.#ready('getNamespaceMeta');
@@ -463,7 +546,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Create or replace a worker's record; `startedAt` and `lastHeartbeatAt` are store now. */
+  /**
+   * Create or replace a worker's record; `startedAt` and `lastHeartbeatAt` are store now.
+   * @beta
+   */
   async registerWorker(ns: NamespaceScope, req: RegisterWorkerRequest): Promise<RegisterWorkerResult> {
     return this.#run('registerWorker', () => {
       checkRegisterWorker(req);
@@ -472,7 +558,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Refresh a worker's record at store now; `ok: false` when it is gone. */
+  /**
+   * Refresh a worker's record at store now; `ok: false` when it is gone.
+   * @beta
+   */
   async heartbeatWorker(ns: NamespaceScope, req: HeartbeatWorkerRequest): Promise<{ ok: boolean }> {
     return this.#run('heartbeatWorker', () => {
       checkHeartbeatWorker(req);
@@ -481,7 +570,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Delete a worker's registry record. */
+  /**
+   * Delete a worker's registry record.
+   * @beta
+   */
   async unregisterWorker(ns: NamespaceScope, req: { workerId: string }): Promise<void> {
     return this.#run('unregisterWorker', () => {
       checkWorkerId('unregisterWorker', req);
@@ -489,7 +581,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** The namespace's worker records (only those serving `queue` when given) and store now. */
+  /**
+   * The namespace's worker records (only those serving `queue` when given) and store now.
+   * @beta
+   */
   async listWorkers(ns: NamespaceScope, req: { queue?: string }): Promise<ListWorkersResult> {
     return this.#run('listWorkers', () => {
       checkListWorkers(req);
@@ -498,7 +593,10 @@ export class MemoryStore implements Store {
     });
   }
 
-  /** Delete up to `limit` records not heard from for `staleIntervals` of their own heartbeat interval. */
+  /**
+   * Delete up to `limit` records not heard from for `staleIntervals` of their own heartbeat interval.
+   * @beta
+   */
   async purgeWorkers(ns: NamespaceScope, req: { staleIntervals: number; limit: number }): Promise<{ removed: number }> {
     return this.#run('purgeWorkers', () => {
       checkPurgeWorkers(req);
@@ -510,6 +608,7 @@ export class MemoryStore implements Store {
   /**
    * A hint that claimable work may exist: `onWake` is called (coalesced, after the write) on add, a release to
    * waiting, a sweep requeue and a resume. A throwing `onWake` is ignored. Resolves to an unsubscribe function.
+   * @beta
    */
   async subscribe(scope: Scope, onWake: () => void): Promise<() => Promise<void>> {
     return this.#run('subscribe', () => {

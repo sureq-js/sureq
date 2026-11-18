@@ -56,6 +56,8 @@ export const DEFAULT_COMPLETED: Policy = Object.freeze({ count: 1000 });
 export const DEFAULT_FAILED: Policy = Object.freeze({ ageMs: 14 * DAY });
 const KEEP_RULE = 'expected true, false, a count >= 0 or { count?, age? }';
 const JOB_KEEP_RULE = 'expected true, false, 0, a duration or { age }';
+/** A bare number on a job is milliseconds, but on the queue retention it is a count: refuse it on the job. */
+const BARE_NUMBER_JOB_KEEP = 'a bare number is ambiguous on a job: write a duration such as "1000ms" or { age: 1000 }';
 const DURATION_RULE = 'expected non-negative whole milliseconds or a string like "30s"';
 
 type Add = (issue: ConfigIssue) => void;
@@ -116,7 +118,8 @@ function parseOneJobKeep(v: unknown, path: string, add: Add): Policy | undefined
     if (v['age'] === undefined) {
       if (v['count'] === undefined) add({ path: `${path}.age`, code: 'missing_option', message: 'required option is missing' });
     } else ageMs = age(v['age'], `${path}.age`, add);
-  } else if (typeof v === 'number' || typeof v === 'string') ageMs = age(v, path, add);
+  } else if (typeof v === 'string') ageMs = age(v, path, add);
+  else if (typeof v === 'number') add({ path, code: 'invalid_type', message: BARE_NUMBER_JOB_KEEP, expected: JOB_KEEP_RULE });
   else add({ path, code: 'invalid_type', message: JOB_KEEP_RULE, expected: JOB_KEEP_RULE });
   if (ageMs === undefined) return undefined;
   return ageMs === 0 ? 'none' : { ageMs };

@@ -1,6 +1,6 @@
 {
   "name": "@sureq/core",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "SureQ: a durable, multi-pod-safe job queue for Node.js with pluggable storage.",
   "license": "MIT",
   "repository": {

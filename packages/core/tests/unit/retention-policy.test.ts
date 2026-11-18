@@ -55,6 +55,20 @@ describe('retention policy', () => {
     expect(() => new Queue('q', { logger: silent, retention: { failed: 0 }, deadLetter: false })).not.toThrow();
   });
 
+  it('retention: a bare number on a job keep is refused, while a queue retention count still works', async () => {
+    const { store, calls } = spyStore(new MemoryStore());
+    const q = new Queue('q', { logger: silent, store });
+    const before = calls.length;
+    const err = await q.add(1, { keep: { completed: 1000 } }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(InvalidOptionError);
+    expect((err as InvalidOptionError).issues.map((i) => i.path)).toEqual(['keep.completed']);
+    expect(calls.slice(before).filter((c) => c.op === 'add')).toEqual([]);
+    // the same number on the queue is a count of jobs, and stays valid
+    const q2 = new Queue('q2', { logger: silent, retention: { completed: 1000 } });
+    await q2.close();
+    await q.close();
+  });
+
   it('retention: uniqueWhile retained with keep none throws InvalidOptionError', async () => {
     const { store, calls } = spyStore(new MemoryStore());
     const q = new Queue('q', { logger: silent, store });

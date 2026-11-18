@@ -1,8 +1,10 @@
 name: publish
 
-# Run by hand only: never on push, tag or release.
+# Runs when a release tag (v1.0.0, v1.0.1-rc.1 ...) is pushed. Nothing else starts it.
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -11,12 +13,25 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # The environment's required reviewer approves the release before this job runs.
+    environment: npm-publish
     steps:
+      # full history, so the tag can be checked against main
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      # the tag must be v<version> of the packages, and its commit must already be on main
+      - name: Check the tag matches the version and is on main
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+          if [ "$TAG" != "v$version" ]; then echo "tag $TAG does not match package version v$version"; exit 1; fi
+          if ! git merge-base --is-ancestor HEAD origin/main; then echo "tag $TAG does not point at a commit on main"; exit 1; fi
       # one dist-tag is derived for both packages, so their versions must be identical
       - name: Check the packages share one version
         run: |
@@ -24,6 +39,8 @@ jobs:
             const v = ['core', 'store-test'].map((d) => require('./packages/' + d + '/package.json').version);
             if (new Set(v).size !== 1) { console.error('package versions differ: ' + v.join(', ')); process.exit(1); }
           "
+      # Trusted publishing (no token) needs npm 11.5.1 or newer; the Node 22 image ships an older npm.
+      - run: npm install -g npm@latest
       - run: npm ci
       - run: npm run build
       - run: npm run test:dist
@@ -37,6 +54,5 @@ jobs:
             *-*) echo "tag=next" >> "$GITHUB_OUTPUT" ;;
             *) echo "tag=latest" >> "$GITHUB_OUTPUT" ;;
           esac
+      # Publishes through the trusted publisher set up on npmjs.com: no token is read here.
       - run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }} --registry=https://registry.npmjs.org/ -w @sureq/core -w @sureq/store-test
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

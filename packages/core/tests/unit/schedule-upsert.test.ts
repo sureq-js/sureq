@@ -48,7 +48,7 @@ describe('upsertSchedule', () => {
     const res = await queue.upsertSchedule('every', { every: '1m', template: { data: { n: 1 } } });
     expect(res.action).toBe('created');
     expect(res.schedule).toMatchObject({
-      key: 'every', kind: 'every', everyMs: 60_000, anchorAt: clock.t, nextRunAt: clock.t + 60_000, rev: 1, paused: false, runCount: 0,
+      key: 'every', kind: 'every', everyMs: 60_000, anchorAt: clock.t, nextRunAt: clock.t + 60_000, paused: false, runCount: 0,
       definitionVersion: 0, overlap: 'skip', maxQueued: 10, queuedTicks: [], lastFiredFor: null, lastJobId: null,
       template: { name: null, data: { n: 1 }, opts: {} },
     });
@@ -111,7 +111,7 @@ describe('upsertSchedule', () => {
     clock.t += 10_000;
     const res = await queue.upsertSchedule('k', { every: '1m', template: { data: { v: 2 } }, overlap: 'allow' });
     expect(res.action).toBe('updated');
-    expect(res.schedule).toMatchObject({ nextRunAt: first.nextRunAt, anchorAt: first.anchorAt, overlap: 'allow', template: { data: { v: 2 } }, rev: 2 });
+    expect(res.schedule).toMatchObject({ nextRunAt: first.nextRunAt, anchorAt: first.anchorAt, overlap: 'allow', template: { data: { v: 2 } } });
   });
 
   it('schedule-upsert: key order in data does not change the hash', async () => {

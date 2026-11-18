@@ -198,6 +198,8 @@ queue.process(async (job) => {
 | `definitionHash` | `string` | A hash of the definition, used to answer `'unchanged'`. |
 | `definitionVersion` | `number` | The stored `version`. |
 | `formatVersion` | `number` | The record format. |
+| `createdAt` | `number` | When the schedule was first stored, in store time. |
+| `updatedAt` | `number` | When the schedule was last changed, in store time. |
 | `rev` | `number` | The revision, raised on each write. |
 | `createdAt` | `number` | When it was created, in store time. |
 | `updatedAt` | `number` | When it was last written, in store time. |

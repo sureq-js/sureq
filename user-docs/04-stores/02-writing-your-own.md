@@ -195,8 +195,8 @@ runStoreConformance({
 ```json
 {
   "name": "sureq-store-mydb",
-  "peerDependencies": { "@sureq/core": "^1.0.0-rc.1" },
-  "devDependencies": { "@sureq/store-test": "^1.0.0-rc.1" }
+  "peerDependencies": { "@sureq/core": "^1.0.0" },
+  "devDependencies": { "@sureq/store-test": "^1.0.0" }
 }
 ```
 

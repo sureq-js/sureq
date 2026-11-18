@@ -103,10 +103,12 @@ describe('repository hygiene', () => {
     }
   });
 
-  it('repo: the publish workflow runs only by hand and requests an OIDC token', () => {
+  it('repo: the publish workflow runs only on a release tag, from the approval environment, and requests an OIDC token', () => {
     const yml = read('.github/workflows/publish.yml');
     const on = /^on:\n((?:[ \t]+.*\n|\n)*)/m.exec(yml)?.[1] ?? '';
-    expect(on.trim()).toBe('workflow_dispatch:');
+    expect(on).toMatch(/^  push:\n    tags:\n      - 'v\*'$/m);
+    expect(on).not.toMatch(/workflow_dispatch/);
+    expect(yml).toMatch(/^    environment: npm-publish$/m);
     expect(yml).toMatch(/^\s+id-token: write$/m);
     expect(yml).toMatch(/--provenance/);
   });

@@ -36,8 +36,56 @@ export type ScheduleDefinition<D = unknown> = ScheduleTiming & {
   maxQueued?: number;
 };
 
-/** A stored schedule, with its template data read back. */
-export type Schedule<D = unknown> = Omit<ScheduleRecord, 'template'> & { template: { name: string | null; data: D; opts: Record<string, unknown> } };
+/**
+ * A stored schedule as the schedule methods return it, with its template data read back. Standalone: it names only the
+ * fields in the docs, so a change to the store record cannot change this type.
+ */
+export interface Schedule<D = unknown> {
+  /** The key. */
+  key: string;
+  /** The namespace. */
+  namespace: string;
+  /** The queue name. */
+  queue: string;
+  /** Which timing it uses. */
+  kind: 'cron' | 'every';
+  /** The cron rule, when `kind` is `'cron'`. */
+  cron?: string;
+  /** The IANA time zone of `cron`. */
+  tz?: string;
+  /** The period, in ms, when `kind` is `'every'`. */
+  everyMs?: number;
+  /** Start of the `every` grid, in store time. */
+  anchorAt?: number;
+  /** The template, with its data read back. */
+  template: { name: string | null; data: D; opts: Record<string, unknown> };
+  /** The overlap policy. */
+  overlap: OverlapPolicy;
+  /** The backlog cap under `overlap: 'queue'`. */
+  maxQueued: number;
+  /** `true` while paused. */
+  paused: boolean;
+  /** The next tick, in store time. */
+  nextRunAt: number;
+  /** The tick of the last job made. */
+  lastFiredFor: number | null;
+  /** The id of the last job made. */
+  lastJobId: string | null;
+  /** Ticks in the `'queue'` backlog. */
+  queuedTicks: number[];
+  /** Jobs made so far. */
+  runCount: number;
+  /** A hash of the definition, used to answer `'unchanged'`. */
+  definitionHash: string;
+  /** The stored `version`. */
+  definitionVersion: number;
+  /** The record format. */
+  formatVersion: number;
+  /** When the schedule was first stored, in store time. */
+  createdAt: number;
+  /** When the schedule was last changed, in store time. */
+  updatedAt: number;
+}
 
 /** What `upsertSchedule` did; `'stale'`: a higher `version` is stored, and nothing was written. */
 export interface UpsertResult<D = unknown> {
@@ -118,8 +166,30 @@ export function definitionHash(parts: object): string {
 
 /** A stored schedule with its template data parsed. */
 export function toSchedule<D>(rec: ScheduleRecord): Schedule<D> {
-  const { data } = rec.template;
-  return { ...rec, template: { ...rec.template, data: JSON.parse(payloadText(data)) as D } };
+  return {
+    key: rec.key,
+    namespace: rec.namespace,
+    queue: rec.queue,
+    kind: rec.kind,
+    ...(rec.cron !== undefined && { cron: rec.cron }),
+    ...(rec.tz !== undefined && { tz: rec.tz }),
+    ...(rec.everyMs !== undefined && { everyMs: rec.everyMs }),
+    ...(rec.anchorAt !== undefined && { anchorAt: rec.anchorAt }),
+    template: { name: rec.template.name, data: JSON.parse(payloadText(rec.template.data)) as D, opts: rec.template.opts },
+    overlap: rec.overlap,
+    maxQueued: rec.maxQueued,
+    paused: rec.paused,
+    nextRunAt: rec.nextRunAt,
+    lastFiredFor: rec.lastFiredFor,
+    lastJobId: rec.lastJobId,
+    queuedTicks: rec.queuedTicks,
+    runCount: rec.runCount,
+    definitionHash: rec.definitionHash,
+    definitionVersion: rec.definitionVersion,
+    formatVersion: rec.formatVersion,
+    createdAt: rec.createdAt,
+    updatedAt: rec.updatedAt,
+  };
 }
 
 /**

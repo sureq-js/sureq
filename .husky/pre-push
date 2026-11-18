@@ -1,0 +1,5 @@
+#!/bin/sh
+# Before each push: run every check the CI workflow runs, so a red CI run is caught here first.
+# Set SUREQ_SKIP_PREPUSH=1 only in an emergency; CI still runs on GitHub.
+[ "$SUREQ_SKIP_PREPUSH" = "1" ] && exit 0
+exec sh scripts/ci-local.sh

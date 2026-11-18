@@ -16,7 +16,7 @@ queue.on('versionSkew', ({ workers }) => {
 ```
 
 - If you see it, finish the deploy so that every pod runs the same major and minor release.
-- Pods on 0.3.x beside pods on 1.0.0-rc.1 emit `versionSkew`, because the major versions differ. Do not mix them for longer than the deploy takes.
+- Pods on 0.3.x beside pods on 1.0.0 emit `versionSkew`, because the major versions differ. Do not mix them for longer than the deploy takes.
 - A pod refuses a store written in a format it cannot read, with `StoreFormatError`. A running pod whose store moves to a newer format stops claiming and reports `STORE_FORMAT_AHEAD`. See [Troubleshooting](02-troubleshooting.md#a-pod-stopped-claiming-after-a-deploy).
 
 See [Events: store and pods](../03-reference/06-events.md#store-and-pods) for the payload.
