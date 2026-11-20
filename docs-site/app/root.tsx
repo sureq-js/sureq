@@ -21,6 +21,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <link rel="apple-touch-icon" href={`${import.meta.env.BASE_URL}apple-touch-icon.png`} />
         <link rel="manifest" href={`${import.meta.env.BASE_URL}site.webmanifest`} />
         <meta name="theme-color" content="#059669" />
+        <meta name="google-site-verification" content="qL28fqJceenSR48P4NILzPuGdvaTmjUt5KJp-bvc_mg" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <Meta />
         <Links />
