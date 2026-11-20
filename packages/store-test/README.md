@@ -1,5 +1,13 @@
 # @sureq/store-test
 
+[![npm](https://img.shields.io/npm/v/@sureq/store-test.svg)](https://www.npmjs.com/package/@sureq/store-test)
+[![CI](https://github.com/sureq-js/sureq/actions/workflows/ci.yml/badge.svg)](https://github.com/sureq-js/sureq/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/@sureq/store-test.svg)](LICENSE)
+[![node](https://img.shields.io/node/v/@sureq/store-test.svg)](https://www.npmjs.com/package/@sureq/store-test)
+[![security policy](https://img.shields.io/badge/security-policy-blue.svg)](https://github.com/sureq-js/sureq/blob/main/SECURITY.md)
+[![Known Vulnerabilities](https://snyk.io/test/npm/@sureq/store-test/badge.svg)](https://snyk.io/test/npm/@sureq/store-test)
+[![docs](https://img.shields.io/badge/docs-sureq--js.github.io-blue.svg)](https://sureq-js.github.io/sureq/)
+
 Conformance suite for SureQ stores. It checks a store against the store contract: claims, leases, fencing
 tokens, sweeping, release, cancel, pause, the store clock, and the duplicate rules (unique ids, singleton keys,
 `seq` for idempotency keys, revision-checked writes for merges). A store that passes it is safe to put under a

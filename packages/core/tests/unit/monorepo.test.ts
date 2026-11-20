@@ -37,7 +37,7 @@ describe('monorepo', () => {
     (dir) => {
       const p = readJson(`packages/${dir}/package.json`);
       expect(p['name']).toBe(`@sureq/${dir}`);
-      expect(p['version']).toBe('1.0.0');
+      expect(p['version']).toBe('1.0.1');
       expect(p['type']).toBe('module');
       expect(p['sideEffects']).toBe(false);
       expect(p['engines'].node).toBe('>=22');
@@ -52,7 +52,7 @@ describe('monorepo', () => {
 
   it.each(['store-test'])('pkg: store-test lists core as a peer dependency: %s', (dir) => {
     const p = readJson(`packages/${dir}/package.json`);
-    expect(p['peerDependencies']['@sureq/core']).toBe('^1.0.0');
+    expect(p['peerDependencies']['@sureq/core']).toBe('^1.0.1');
     expect(p['dependencies']?.['@sureq/core']).toBeUndefined();
   });
   it('pkg: workspace packages share one version and peer ranges match', () => {
