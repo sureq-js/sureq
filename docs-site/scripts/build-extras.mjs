@@ -1,13 +1,16 @@
-// Writes llms.txt, llms-full.txt and a raw .md copy of every page into the built site (https://llmstxt.org).
-// Run after `react-router build`: node scripts/build-llms.mjs [outDir]
+// Writes the files crawlers and AI tools read into the built site: sitemap.xml, llms.txt, llms-full.txt
+// (https://llmstxt.org) and a raw .md copy of every page.
+// Run after `react-router build`: node scripts/build-extras.mjs [outDir]
 import fs from 'node:fs'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+
+import { SITE, canonicalUrl, pageSummary } from '../src/lib/page-meta.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const DOCS_ROOT = path.resolve(here, '../../user-docs')
 const OUT_DIR = path.resolve(here, '..', process.argv[2] ?? 'build/client')
-const SITE = 'https://sureq-js.github.io/sureq'
 
 const GROUP_TITLES = {
   'getting-started': 'Getting started',
@@ -40,20 +43,25 @@ function title(markdown) {
   return markdown.match(/^#\s+(.+)$/m)?.[1].trim() ?? 'Untitled'
 }
 
-// The first paragraph after the title, as one line.
-function summary(markdown) {
-  const lines = markdown.split('\n')
-  const start = lines.findIndex((l) => /^#\s/.test(l)) + 1
-  const para = []
-  for (const line of lines.slice(start)) {
-    if (!line.trim()) {
-      if (para.length) break
-      continue
-    }
-    if (/^(#|```|\||[-*] |\d+\. |>)/.test(line)) break
-    para.push(line.trim())
+// The site route of a doc, as load-docs.ts computes it: README.md -> '/', 02-guides/05-schedules.md -> '/guides/schedules'.
+function routePath(sourceFile) {
+  if (sourceFile === 'README.md') return '/'
+  return `/${sourceFile.replace(/\.md$/, '').split('/').map(strip).join('/')}`
+}
+
+// The date of the last commit that touched the doc (YYYY-MM-DD), or undefined outside a git checkout.
+// CI must check out with enough history for this to be the real date; a shallow clone gives the newest commit's date.
+function lastModified(sourceFile) {
+  try {
+    const out = execFileSync('git', ['log', '-1', '--format=%cs', '--', sourceFile], {
+      cwd: DOCS_ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+    return out || undefined
+  } catch {
+    return undefined
   }
-  return para.join(' ').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
 }
 
 // Point relative links to other docs at their published .md copies.
@@ -68,8 +76,21 @@ function absoluteLinks(markdown, sourceFile) {
 const pages = listDocs(DOCS_ROOT).map((sourceFile) => {
   const raw = fs.readFileSync(path.join(DOCS_ROOT, sourceFile), 'utf8')
   const content = absoluteLinks(raw, sourceFile).trimEnd() + '\n'
-  return { sourceFile, content, title: title(raw), summary: summary(raw), url: `${SITE}/${mdPath(sourceFile)}` }
+  return { sourceFile, content, title: title(raw), summary: pageSummary(raw), url: `${SITE}/${mdPath(sourceFile)}` }
 })
+
+const escapeXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const sitemap = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  ...pages.map((p) => {
+    const lastmod = lastModified(p.sourceFile)
+    return `  <url><loc>${escapeXml(canonicalUrl(routePath(p.sourceFile)))}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
+  }),
+  '</urlset>',
+  '',
+].join('\n')
+fs.writeFileSync(path.join(OUT_DIR, 'sitemap.xml'), sitemap)
 
 for (const page of pages) {
   const file = path.join(OUT_DIR, mdPath(page.sourceFile))
@@ -106,4 +127,4 @@ fs.writeFileSync(path.join(OUT_DIR, 'llms.txt'), index.join('\n'))
 const full = pages.map((p) => `<!-- ${p.url} -->\n\n${p.content}`).join('\n---\n\n')
 fs.writeFileSync(path.join(OUT_DIR, 'llms-full.txt'), full)
 
-console.log(`llms.txt: ${pages.length} pages written to ${path.relative(process.cwd(), OUT_DIR) || '.'}`)
+console.log(`sitemap.xml, llms.txt: ${pages.length} pages written to ${path.relative(process.cwd(), OUT_DIR) || '.'}`)

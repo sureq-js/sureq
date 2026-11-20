@@ -16,6 +16,7 @@ import {
 import { SKIP, visit } from 'unist-util-visit'
 
 import type { Section } from '@/components/SectionProvider'
+import { pageDescription } from './page-meta.mjs'
 import { resolveDocHrefWithMaps } from './resolve-href.js'
 
 const DOCS_ROOT = path.resolve(
@@ -35,6 +36,8 @@ export interface DocPage {
   sourceFile: string
   routePath: string
   title: string
+  /** Meta description: the first paragraph, cut near 160 characters. */
+  description: string
   content: string
   codeBlocks: Record<string, CodeBlock>
   sections: Section[]
@@ -234,6 +237,7 @@ export async function loadDocsManifest() {
       sourceFile,
       routePath,
       title,
+      description: pageDescription(raw),
       content: raw,
       codeBlocks,
       sections,

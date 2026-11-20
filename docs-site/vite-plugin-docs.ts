@@ -20,6 +20,7 @@ async function buildVirtualModule() {
       sourceFile: p.sourceFile,
       routePath: p.routePath,
       title: p.title,
+      description: p.description,
       content: p.content,
       codeBlocks: p.codeBlocks,
       sections: p.sections,
