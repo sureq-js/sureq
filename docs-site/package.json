@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "react-router dev",
-    "build": "react-router build && cp -R build/client/sureq/. build/client/ && rm -rf build/client/sureq && cp build/client/__spa-fallback.html build/client/404.html && node scripts/build-llms.mjs",
+    "build": "react-router build && cp -R build/client/sureq/. build/client/ && rm -rf build/client/sureq && cp build/client/__spa-fallback.html build/client/404.html && node scripts/build-extras.mjs",
     "preview": "vite preview --outDir build/client",
     "typecheck": "react-router typegen && tsc --noEmit"
   },
