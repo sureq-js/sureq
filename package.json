@@ -51,6 +51,6 @@
     "vitest": "^5.1.0"
   },
   "lint-staged": {
-    "*.{ts,tsx,mts,cts,js,mjs,cjs}": "eslint --max-warnings=0"
+    "*.{ts,tsx,mts,cts,js,mjs,cjs}": "eslint --max-warnings=0 --no-warn-ignored"
   }
 }
