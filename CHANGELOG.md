@@ -4,6 +4,17 @@ All notable changes to `@sureq/core`. From 1.0, semver applies to the public API
 The store contract stays experimental and may change in a minor release until it is declared stable.
 Before 1.0, a minor release (0.x) could break the API; every break is listed below.
 
+## 1.0.1 - 2026-11-20
+
+No code or behaviour changes; the stored job format and the store contract are unchanged.
+
+**Changed**
+- The npm packages list keywords, so `@sureq/core` and `@sureq/store-test` show up in npm search.
+- The `@sureq/core` and `@sureq/store-test` READMEs show npm, CI, license, Node, security-policy, Snyk and docs badges; the core README states the 1.0 status and the security policy, and links the documentation site.
+
+**Added**
+- The documentation site serves [llms.txt](https://sureq-js.github.io/sureq/llms.txt), [llms-full.txt](https://sureq-js.github.io/sureq/llms-full.txt) and a plain Markdown copy of every page, for AI tools and coding agents.
+
 ## 1.0.0 - 2026-11-17
 
 **Upgrading from 0.3**

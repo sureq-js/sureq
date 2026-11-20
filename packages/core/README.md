@@ -1,5 +1,15 @@
 # SureQ — Sure Queue
 
+[![npm](https://img.shields.io/npm/v/@sureq/core.svg)](https://www.npmjs.com/package/@sureq/core)
+[![CI](https://github.com/sureq-js/sureq/actions/workflows/ci.yml/badge.svg)](https://github.com/sureq-js/sureq/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/@sureq/core.svg)](LICENSE)
+[![node](https://img.shields.io/node/v/@sureq/core.svg)](https://www.npmjs.com/package/@sureq/core)
+[![security policy](https://img.shields.io/badge/security-policy-blue.svg)](https://github.com/sureq-js/sureq/blob/main/SECURITY.md)
+[![Known Vulnerabilities](https://snyk.io/test/npm/@sureq/core/badge.svg)](https://snyk.io/test/npm/@sureq/core)
+[![docs](https://img.shields.io/badge/docs-sureq--js.github.io-blue.svg)](https://sureq-js.github.io/sureq/)
+
+**Status:** 1.0. The public API follows semver. The store contract is **experimental until 1.1** and may change in a minor release before then.
+
 Jobs you can be sure of.
 
 SureQ is a TypeScript job queue for Node.js: typed jobs, retries with backoff, priorities, delayed jobs, schedules, batch workers, dead letters, health checks, metrics, producer-only pods and typed errors. An in-memory store is built in; any other store plugs in through the store contract, and durable stores for running many pods on one queue come as separate adapter packages.
@@ -12,7 +22,8 @@ Node 22 or newer. ESM and CommonJS. No runtime dependencies. Bun and Deno suppor
 
 ## Documentation
 
-Guides, the API reference, store authoring and operations notes are in the [SureQ documentation](https://github.com/sureq-js/sureq/blob/main/user-docs/README.md).
+Guides, the API reference, store authoring and operations notes are in the [SureQ documentation](https://sureq-js.github.io/sureq/).
+For AI tools and coding agents, the docs are also plain Markdown: [llms.txt](https://sureq-js.github.io/sureq/llms.txt) lists every page, and [llms-full.txt](https://sureq-js.github.io/sureq/llms-full.txt) has all of them in one file.
 
 ## Getting started
 
@@ -274,6 +285,10 @@ See [Schedules](https://github.com/sureq-js/sureq/blob/main/user-docs/02-guides/
 
 SureQ runs a job at least once, never exactly once, and the built-in store is in memory, so its jobs are lost when the process exits.
 See [Known limits](https://github.com/sureq-js/sureq/blob/main/user-docs/05-operations/04-known-limits.md) for the full list.
+
+## Security
+
+Security fixes go to the latest minor release of the current major version. To report a vulnerability, use GitHub's private reporting form: [report a vulnerability](https://github.com/sureq-js/sureq/security/advisories/new). Do not open a public issue for it. The full policy is in [SECURITY.md](https://github.com/sureq-js/sureq/blob/main/SECURITY.md).
 
 ## License
 

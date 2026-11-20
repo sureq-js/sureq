@@ -1,7 +1,21 @@
 {
   "name": "@sureq/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SureQ: a durable, multi-pod-safe job queue for Node.js with pluggable storage.",
+  "keywords": [
+    "job-queue",
+    "task-queue",
+    "background-jobs",
+    "queue",
+    "worker",
+    "scheduler",
+    "scheduled-jobs",
+    "delayed-jobs",
+    "retries",
+    "dead-letter-queue",
+    "typescript",
+    "nodejs"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
