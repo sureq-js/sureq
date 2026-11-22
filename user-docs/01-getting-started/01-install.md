@@ -66,6 +66,16 @@ You need a durable store when:
 
 A durable store is a store adapter that implements the store contract. A `Producer` always needs a `store` option, because it never creates one. The store contract is experimental until 1.1. See [Stores](../04-stores/01-store-contract.md).
 
+## AI coding agents
+
+SureQ has an agent skill: rules and reference notes a coding agent reads before it writes SureQ code, so it uses the defaults, avoids the common mistakes and finds the right reference page. Install it into your project with the [skills CLI](https://www.npmjs.com/package/skills), which supports Claude Code and other agents:
+
+```sh
+npx skills add sureq-js/sureq --skill sureq
+```
+
+The skill is in [`skills/sureq`](https://github.com/sureq-js/sureq/tree/main/skills/sureq) in the repository. Agents can also read these docs as plain Markdown: [llms.txt](https://sureq-js.github.io/sureq/llms.txt) lists every page, and [llms-full.txt](https://sureq-js.github.io/sureq/llms-full.txt) has them all in one file.
+
 ## Next
 
 [Build your first queue](02-first-queue.md).

@@ -15,6 +15,8 @@ A TypeScript job queue for Node.js with pluggable storage: an in-memory store is
 
 Start with the [SureQ documentation](user-docs/README.md): getting started, guides, the API reference, stores and operations. The published site is built from [`docs-site/`](docs-site/) (Protocol template + React Router).
 
+Using a coding agent? Install the [SureQ agent skill](skills/sureq) with `npx skills add sureq-js/sureq --skill sureq`.
+
 | Package | Description |
 | --- | --- |
 | [`@sureq/core`](packages/core) | The queue, workers and the contract every store implements |
