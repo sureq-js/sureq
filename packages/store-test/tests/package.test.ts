@@ -10,7 +10,7 @@ describe('package', () => {
   it('suite: package has zero runtime dependencies and peers on core', () => {
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
     expect(Object.keys(pkg.dependencies ?? {})).toEqual([]);
-    expect(pkg.peerDependencies['@sureq/core']).toBe('^1.0.2');
+    expect(pkg.peerDependencies['@sureq/core']).toBe('^1.0.1');
   });
 
   it('suite: sources never import Queue or Worker', () => {

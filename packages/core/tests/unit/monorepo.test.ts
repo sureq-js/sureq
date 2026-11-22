@@ -5,6 +5,14 @@ import { repoRoot } from '../helpers/dev-docs.js';
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const readJson = (p: string) => JSON.parse(readFileSync(join(repoRoot, p), 'utf8')) as Json;
+const parts = (v: string) => v.split('-')[0]!.split('.').map(Number) as [number, number, number];
+/** Whether `version` is in the caret range `^min` (same major, not lower); enough for the ranges used here. */
+const caretAccepts = (range: string, version: string): boolean => {
+  if (!range.startsWith('^')) return false;
+  const [a, b, c] = parts(range.slice(1));
+  const [x, y, z] = parts(version);
+  return x === a && (y > b || (y === b && z >= c));
+};
 
 describe('monorepo', () => {
   it('pkg: root is private and declares the workspaces', () => {
@@ -37,7 +45,7 @@ describe('monorepo', () => {
     (dir) => {
       const p = readJson(`packages/${dir}/package.json`);
       expect(p['name']).toBe(`@sureq/${dir}`);
-      expect(p['version']).toBe('1.0.2');
+      expect(p['version']).toMatch(/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
       expect(p['type']).toBe('module');
       expect(p['sideEffects']).toBe(false);
       expect(p['engines'].node).toBe('>=22');
@@ -52,16 +60,15 @@ describe('monorepo', () => {
 
   it.each(['store-test'])('pkg: store-test lists core as a peer dependency: %s', (dir) => {
     const p = readJson(`packages/${dir}/package.json`);
-    expect(p['peerDependencies']['@sureq/core']).toBe('^1.0.2');
+    expect(p['peerDependencies']['@sureq/core']).toMatch(/^\^\d+\.\d+\.\d+$/);
     expect(p['dependencies']?.['@sureq/core']).toBeUndefined();
   });
-  it('pkg: workspace packages share one version and peer ranges match', () => {
+  it('pkg: packages are versioned on their own; each core peer range accepts the current core version', () => {
     const core = readJson('packages/core/package.json');
-    const range = `^${core['version']}`;
     for (const dir of ['packages/store-test', 'examples/store-template']) {
       const p = readJson(`${dir}/package.json`);
-      expect(p['version'], dir).toBe(core['version']);
-      expect(p['peerDependencies']['@sureq/core'], dir).toBe(range);
+      const range = p['peerDependencies']['@sureq/core'] as string;
+      expect(caretAccepts(range, core['version']), `${dir} peer ${range} vs core ${core['version']}`).toBe(true);
       expect(p['dependencies'] ?? {}, dir).toEqual({});
     }
     expect(readJson('examples/store-template/package.json')['private']).toBe(true);

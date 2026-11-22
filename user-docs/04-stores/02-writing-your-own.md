@@ -214,7 +214,7 @@ export declare function createMyStore(opts: { url: string }): Store
 
 ## When the contract changes
 
-Read the core `CHANGELOG.md` before you upgrade. Every change to the store contract is listed there. A change may raise `STORE_CONTRACT_VERSION`. Core lists the versions it accepts in `SUPPORTED_CONTRACT_VERSIONS`, and a store outside them is refused with `StoreContractVersionError` when a queue opens it. Update your adapter, re-run the suite (it grows with the contract), and publish a new version that names the new contract version.
+Read the [core changelog](https://github.com/sureq-js/sureq/blob/main/packages/core/CHANGELOG.md) before you upgrade. Every change to the store contract is listed there. A change may raise `STORE_CONTRACT_VERSION`. Core lists the versions it accepts in `SUPPORTED_CONTRACT_VERSIONS`, and a store outside them is refused with `StoreContractVersionError` when a queue opens it. Update your adapter, re-run the suite (it grows with the contract), and publish a new version that names the new contract version.
 
 ## Getting help
 

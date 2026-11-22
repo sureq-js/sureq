@@ -103,7 +103,7 @@ describe('README and CHANGELOG', () => {
 
   it('changelog: has an entry for the package version and links no private docs', () => {
     const { version } = JSON.parse(read('package.json')) as { version: string };
-    const changelog = readRepo('CHANGELOG.md');
+    const changelog = readRepo('packages/core/CHANGELOG.md');
     expect(changelog).toContain(`## ${version} `);
     for (const text of [changelog, read('README.md')]) expect(text).not.toMatch(/ROADMAP|FEATURES\.md|(?<![\w-])docs\//);
   });
