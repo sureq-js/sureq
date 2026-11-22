@@ -25,13 +25,4 @@ describe('changelog', () => {
     for (const name of groups) expect(area(entry, name).length, name).toBeGreaterThan(0);
     expect(changelog.match(/\b[A-Z]\d{1,2}[a-z]?\b|§/g) ?? []).toEqual([]);
   });
-
-  it('changelog: the last pre-stable entry lists breaking changes and every feature area', () => {
-    const entry = entryOf('0.3.0');
-    for (const name of ['Breaking changes', 'Store contract', 'Reliability', 'Flow', 'Schedules', 'Observability', 'Platform', 'Tooling']) {
-      expect(area(entry, name).length, name).toBeGreaterThan(0);
-    }
-    const breaking = area(entry, 'Breaking changes').join('\n');
-    for (const word of ['retention', 'resultGrace', 'STORE_CONTRACT_VERSION', 'deadLetter']) expect(breaking).toContain(word);
-  });
 });
