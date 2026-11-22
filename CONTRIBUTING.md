@@ -23,6 +23,17 @@ Node.js 22 or later. Install with `npm ci` at the repository root; it installs e
 
 Run `npm test`, `npm run lint`, `npm run typecheck` and `npm run check:pkg` before opening a change.
 
+## Git hooks and CI
+
+- **Before each commit:** lint on the staged files, then `npm test`.
+- **Before each push:** `scripts/ci-local.sh` runs every CI step on this machine (about 25 minutes), so a red CI run is
+  caught first. A push of tags only skips it: a release tag goes on a commit that is already on `main` and was tested.
+  `SUREQ_SKIP_PREPUSH=1` skips it in an emergency; CI still runs on GitHub.
+- **On a pull request:** CI runs every job, except for a pull request that changes only documentation
+  (`user-docs/`, `docs-site/`, `skills/`, `brand/` or `*.md` files), which runs the unit tests alone, since they check
+  the docs against the code. The `ci` job reports the result as one check, and it is the check `main` requires. A new
+  push to a pull request cancels its run that is still going.
+
 ## Skipped tests
 
 Some tests are reported as skipped on purpose:
