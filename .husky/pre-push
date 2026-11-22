@@ -2,4 +2,16 @@
 # Before each push: run every check the CI workflow runs, so a red CI run is caught here first.
 # Set SUREQ_SKIP_PREPUSH=1 only in an emergency; CI still runs on GitHub.
 [ "$SUREQ_SKIP_PREPUSH" = "1" ] && exit 0
+
+# Git passes one line per pushed ref: "<local ref> <local sha> <remote ref> <remote sha>". A push of
+# tags only (a release tag on a commit that is already on main and was tested) skips the checks.
+only_tags=1
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  case "$remote_ref" in
+    refs/tags/*) ;;
+    *) only_tags=0 ;;
+  esac
+done
+[ "$only_tags" = "1" ] && exit 0
+
 exec sh scripts/ci-local.sh

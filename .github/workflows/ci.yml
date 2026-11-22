@@ -2,12 +2,58 @@ name: ci
 
 # Runs once per pull request update. Not on branch pushes (the PR already runs it), not on merges to main
 # (the PR was green and up to date with main before the merge), and not on release tags (already tested).
+#
+# A pull request that changes only documentation (user-docs/, docs-site/, skills/, brand/ or *.md files)
+# runs the `docs` job alone: the unit tests, which check the docs against the code. Any other change runs
+# every job. The `ci` job reports the result as one check, which is the one the main branch requires.
 on:
   pull_request:
   workflow_dispatch:
 
+# a new push to a pull request cancels its run that is still going
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # a manual run, or a pull request that changes any file outside the documentation, runs every job
+          if [ -z "$BASE" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --name-only "$(git merge-base "$BASE" "$HEAD")" "$HEAD" | grep -qvE '^(user-docs|docs-site|skills|brand)/|\.md$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # documentation-only pull requests: the unit tests read the docs, the skill and the READMEs and check them
+  docs:
+    needs: changes
+    if: needs.changes.outputs.code == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
   test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,6 +76,8 @@ jobs:
       - run: npm run api:check
 
   conformance:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -44,6 +92,8 @@ jobs:
       - run: npm run test:conformance
 
   stress:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -58,6 +108,8 @@ jobs:
       - run: npm run test:stress
 
   types:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -74,3 +126,18 @@ jobs:
       - run: npm run typecheck
       # the skill samples compile with the TypeScript this job installed
       - run: npm exec -w @sureq/core -- vitest run tests/skill/samples.test.ts
+
+  # the one check the main branch requires: every job passed, or was skipped for a documentation-only change
+  ci:
+    if: always()
+    needs: [changes, docs, test, conformance, stress, types]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job passed or was skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) echo "a job ended with: $r"; exit 1 ;; esac
+          done
