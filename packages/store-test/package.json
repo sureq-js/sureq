@@ -1,6 +1,6 @@
 {
   "name": "@sureq/store-test",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Store conformance suite for SureQ",
   "keywords": [
     "sureq",
