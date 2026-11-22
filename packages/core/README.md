@@ -25,6 +25,12 @@ Node 22 or newer. ESM and CommonJS. No runtime dependencies. Bun and Deno suppor
 Guides, the API reference, store authoring and operations notes are in the [SureQ documentation](https://sureq-js.github.io/sureq/).
 For AI tools and coding agents, the docs are also plain Markdown: [llms.txt](https://sureq-js.github.io/sureq/llms.txt) lists every page, and [llms-full.txt](https://sureq-js.github.io/sureq/llms-full.txt) has all of them in one file.
 
+**Agent skill.** For a coding agent such as Claude Code, install the SureQ skill into your project so the agent follows SureQ's defaults and avoids its common mistakes ([what's in it](https://github.com/sureq-js/sureq/tree/main/skills/sureq)):
+
+```sh
+npx skills add sureq-js/sureq --skill sureq
+```
+
 ## Getting started
 
 ```ts

@@ -9,7 +9,7 @@ metadata:
 
 SureQ is a job queue for Node.js and TypeScript, published as `@sureq/core`.
 A `Queue` stores jobs, `queue.process(handler)` starts a worker that runs them, and a store keeps the jobs.
-This skill documents SureQ 1.0.0.
+This skill documents the SureQ release in `metadata.version` above.
 Read the rules here first, then open a reference file for the details.
 
 ## Use SureQ for
@@ -59,6 +59,7 @@ Each line follows [Going to production](https://github.com/sureq-js/sureq/blob/m
 - Do not create a `Queue` per request, because a queue with no `store` makes its own in-memory store, so jobs added to it never reach your worker; create the queue once at start-up and reuse it.
 - Do not leave out the `error` listener, because store and listener failures are reported as `error` events.
 - Do not call `close()` without `await`, because the process can exit before running jobs finish or are released.
+- Do not give job data or results a `Date`, `Map`, `Set` or class instance and expect it back, because jobs are stored as JSON and handlers read `job.data` as `Jsonify<D>`: a `Date` arrives as its ISO string and a `Map` or `Set` as `{}`; send dates as ISO strings or epoch ms and read them with `new Date(...)`, and use arrays or plain objects instead.
 - Do not pass a bare number as a job's `keep` value, because it is refused on a job (only `0`, meaning none, is accepted); `keep` is per outcome, so write `keep: { completed: '1d' }` or `keep: { completed: { age: 1000 } }`.
 
 ## Where to look
