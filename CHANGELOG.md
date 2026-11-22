@@ -4,6 +4,19 @@ All notable changes to `@sureq/core`. From 1.0, semver applies to the public API
 The store contract stays experimental and may change in a minor release until it is declared stable.
 Before 1.0, a minor release (0.x) could break the API; every break is listed below.
 
+## Unreleased
+
+Job data and results are stored as JSON, but their types claimed the handler got back exactly what was added: `new Queue<{ sendAt: Date }>` compiled, `job.data.sendAt.getTime()` threw on every attempt, and the job became a dead letter. No runtime behaviour, stored job format or store contract changes, except what the queue `filter` sees (below).
+
+**Fixed**
+- Job data and results are typed as read back from JSON: `job.data` is `Jsonify<D>` and `job.result` is `Jsonify<R>`, in handlers, `getJob`/`getJobs`, dead letters, events (the `completed` event's `result` too), the `filter`, the `onDuplicate` merge's arguments and a schedule's template data. A `Date` field reads as `string`, so `job.data.sendAt.getTime()` is a compile error instead of a runtime crash; `new Date(job.data.sendAt)` compiles. Objects with `toJSON()` read as what it returns; `Map` and `Set` as `{}`; typed arrays as an object of their indexes; a property that may hold a function or `undefined` as optional; `undefined` data as `null`. What `add()`, `addBulk()`, a handler's return and a merge's return accept is unchanged.
+- The queue `filter` sees the data as stored, the same shape the handler and the merge get. Before, it got a `structuredClone`, so it saw a real `Date` while the handler got a string. The job stores the JSON the filter saw, so a `toJSON()` method runs once per add. Data that cannot be serialized (a `bigint`, a cycle) still reaches the filter as a frozen copy, and the add is rejected right after unless the filter rejects it first.
+
+**Added**
+- The `Jsonify<T>` type: what `T` becomes after a JSON round trip.
+
+**Note:** code that passes `job.data` (or `job.result`) where the original type is expected no longer compiles when that type holds a `Date`, `Map`, `Set`, `toJSON` object, class instance, or a property that may be `undefined` (it reads as optional), even if it happened to work. Type that parameter as `Jsonify<D>` or `Job<D>`, or convert the field (`new Date(job.data.sendAt)`). A filter's data parameter is no longer typed `Readonly`; the data is still frozen at runtime.
+
 ## 1.0.1 - 2026-11-20
 
 No code or behaviour changes; the stored job format and the store contract are unchanged.

@@ -3,6 +3,7 @@ import {
   JobNotFoundError, PayloadTooLargeError, QueueClosedError, StoreError, StoreNotReadyError, type ConfigIssue, type StoreUnavailableError,
 } from '../errors/catalog.js';
 import { TypedEmitter } from '../events/emitter.js';
+import type { Jsonify } from '../serialize/jsonify.js';
 import type { QueueEvents, Unsubscribe } from '../events/types.js';
 import { toJob, type Job, type JobBinding } from '../job/job.js';
 import { serializeValue } from '../serialize/value.js';
@@ -33,7 +34,7 @@ import {
   buildNewJob, computeMerge, draftRecord, type ComputedMerge, MAX_KEY_BYTES, MERGE_TRIES, mergeInto, resolveId, validateKey, type MergeContext, type MergeFn,
 } from './add.js';
 import { deepFreeze } from '../util/freeze.js';
-import { BULK_FILTER_CONCURRENCY, makeFilter, mapLimit, type FilterContext } from './filter.js';
+import { BULK_FILTER_CONCURRENCY, makeFilter, mapLimit, type FilterContext, type Serialized } from './filter.js';
 import { validate, type Schema } from '../util/validate.js';
 import { parseTiming, upcoming, type ScheduleTiming } from '../scheduler/timing.js';
 import { ScheduleManager, type Schedule, type ScheduleDefinition, type UpsertResult } from '../scheduler/schedules.js';
@@ -68,7 +69,7 @@ interface BulkPrep {
 /** What `addBulk` decided before the gate: the inputs that already failed, and each other input's options and own id. */
 interface Early {
   out: BulkOutcome<unknown, unknown>[];
-  checked: Array<{ policy: ResolvedJobOptions; ownId: string | undefined }>;
+  checked: Array<{ policy: ResolvedJobOptions; ownId: string | undefined; serialized?: Serialized | undefined }>;
 }
 type Duplicate = Extract<AddOutcome, { status: 'duplicate' }>;
 /** A store outcome, or a merge core did on top of it. */
@@ -108,7 +109,7 @@ export type BaseInternals = Readonly<Omit<ResolvedQueueOptions, 'store' | 'logge
   /** The add pipeline: defaults, validation, serialization, size check, id. */
   readonly prepare: (data: unknown, opts: Record<string, unknown>) => Promise<NewJob>;
   /** The queue's filter on one input: resolves when accepted, else emits `rejected` and throws JobRejectedError or FilterError. */
-  readonly filter: (data: unknown, ctx: Omit<FilterContext, 'queue'>) => Promise<void>;
+  readonly filter: (data: unknown, ctx: Omit<FilterContext, 'queue'>) => Promise<Serialized | undefined>;
   /** @internal Decides when this queue object has just become empty (`drained`). */
   readonly drainedLatch: DrainedLatch;
   /** @internal Holds or rejects adds while the store is unreachable. */
@@ -238,7 +239,7 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
   /** @internal */
   protected readonly shared: BaseInternals;
   /** @internal */
-  protected readonly events: TypedEmitter<QueueEvents<Job<D, R>, R>>;
+  protected readonly events: TypedEmitter<QueueEvents<Job<D, R>, Jsonify<R>>>;
   /** @internal */
   protected readonly binding: JobBinding;
   /** @internal */
@@ -319,7 +320,7 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
       names,
     });
     this.#admin = {
-      client, scope, toJob: (rec, now) => toJob(rec, now, this.binding), emit: (event, payload) => this.events.emit(event, payload as QueueEvents<Job<D, R>, R>[typeof event]),
+      client, scope, toJob: (rec, now) => toJob(rec, now, this.binding), emit: (event, payload) => this.events.emit(event, payload as QueueEvents<Job<D, R>, Jsonify<R>>[typeof event]),
       drainedLatch: this.shared.drainedLatch,
       jobsLeft: () => this.#drained(),
       redriven: () => {
@@ -597,9 +598,10 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
     const turn = this.#gateTurn();
     let prepared: Prepared | undefined;
     let ownId: string | undefined;
+    let serialized: Serialized | undefined;
     const send = async () => {
       // Prepared once: a resend after the store came back keeps the same id.
-      const p = (prepared ??= await this.#prepare(data, opts as Record<string, unknown>, { ownId }));
+      const p = (prepared ??= await this.#prepare(data, opts as Record<string, unknown>, { ownId, serialized }));
       this.shared.drainedLatch.addStarted();
       return (await client.call('add', scope, [p.newJob]))[0]!;
     };
@@ -609,7 +611,7 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
       const early = this.#checkEarly(data, opts as Record<string, unknown>);
       ownId = early.ownId;
       // Filtered once, before the gate: a rejection needs no store, and a resend does not filter again.
-      await this.#filter(data, opts, early.policy, ownId);
+      serialized = await this.#filter(data, opts, early.policy, ownId);
       await turn.ready();
       entry = addGate.run(send);
     } finally {
@@ -679,7 +681,7 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
   }
 
   /** Run the queue's filter on one add's data, as `'replace'` when the add replaces a holder. */
-  #filter(data: unknown, opts: object, policy: ResolvedJobOptions, ownId: string | undefined): Promise<void> {
+  #filter(data: unknown, opts: object, policy: ResolvedJobOptions, ownId: string | undefined): Promise<Serialized | undefined> {
     return this.shared.filter(data, {
       name: policy.name,
       id: ownId ?? null,
@@ -745,9 +747,9 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
   async #filterBulk(items: ReadonlyArray<{ data: D; opts?: AddOptions<D> }>, atomic: boolean, early: Early): Promise<void> {
     const errors = await mapLimit(items, BULK_FILTER_CONCURRENCY, async (item, i) => {
       if (early.out[i]) return undefined;
-      const { policy, ownId } = early.checked[i]!;
+      const checked = early.checked[i]!;
       try {
-        await this.#filter(item.data, item.opts ?? {}, policy, ownId);
+        checked.serialized = await this.#filter(item.data, item.opts ?? {}, checked.policy, checked.ownId);
         return undefined;
       } catch (e) {
         if (e instanceof JobRejectedError || e instanceof FilterError) return e;
@@ -832,7 +834,7 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
         continue;
       }
       try {
-        const prepared = await this.#prepare(item.data, (item.opts ?? {}) as Record<string, unknown>, { now, id: ids[i]!, ownId: early.checked[i]!.ownId });
+        const prepared = await this.#prepare(item.data, (item.opts ?? {}) as Record<string, unknown>, { now, id: ids[i]!, ownId: early.checked[i]!.ownId, serialized: early.checked[i]!.serialized });
         ids[i] = prepared.newJob.id;
         prep.preps.push(prepared);
         prep.sent.push(i);
@@ -895,7 +897,7 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
     return {
       client, scope, queue: this.#name, id: p.newJob.id, mergeFn: p.mergeFn!, incoming: p.incoming, maxPayloadBytes, budget, computed: p.computed,
       toJob: (rec) => toJob(rec, Math.max(p.now, rec.createdAt), this.binding),
-      check: (merged) => filter(merged, { name, id: p.newJob.id, opts, operation: 'merge' }),
+      check: async (merged) => { await filter(merged, { name, id: p.newJob.id, opts, operation: 'merge' }); },
     };
   }
 
@@ -1193,28 +1195,32 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
   }
 
   /** Listen for an event; returns a function that stops listening. */
-  on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, R>[K]) => void | Promise<void>): Unsubscribe {
+  on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe {
     return this.events.on(event, fn);
   }
 
   /** Listen for the next occurrence of an event only. */
-  once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, R>[K]) => void | Promise<void>): Unsubscribe {
+  once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe {
     return this.events.once(event, fn);
   }
 
   /** Stop a listener added with `on` or `once`. */
-  off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, R>[K]) => void | Promise<void>): void {
+  off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): void {
     this.events.off(event, fn);
   }
 
   /** Turn one add's data and options into the job the store receives. */
-  async #prepare(data: unknown, addOpts: Record<string, unknown>, given?: { now?: number; id?: string; ownId?: string | undefined }): Promise<Prepared> {
+  async #prepare(
+    data: unknown, addOpts: Record<string, unknown>,
+    given?: { now?: number; id?: string; ownId?: string | undefined; serialized?: Serialized | undefined },
+  ): Promise<Prepared> {
     const { client, defaultJobOptions, order, maxPayloadBytes } = this.shared;
     const now = given?.now ?? (await client.call('now'));
     const policy = resolveJobOptions(defaultJobOptions, addOpts, now, this.shared);
     const keyLimit = this.#keyLimit();
     this.#checkKeys(policy, keyLimit);
-    const { json, bytes } = serializeValue(data);
+    // the filter's serialization when it ran, so toJSON runs once and the job stores exactly what the filter saw
+    const { json, bytes } = given?.serialized ?? serializeValue(data);
     if (bytes > maxPayloadBytes) throw new PayloadTooLargeError({ size: bytes, limit: maxPayloadBytes, queue: this.name });
     // the early check already ran the id function
     const own = given && 'ownId' in given ? given.ownId : resolveId(policy.idSpec, data, keyLimit);

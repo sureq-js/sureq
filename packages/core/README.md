@@ -82,6 +82,7 @@ These hold on the built-in `MemoryStore` and on any store adapter that passes th
 Not promised:
 
 - **Exactly-once effects.** A job can run more than once: after a crash, a lost lease or a release on shutdown. Make side effects safe to repeat with `job.idempotencyKey`, or pass `ctx.token` to your own writes so a stale attempt is rejected.
+- **Types beyond JSON.** Job data and results are stored as JSON, so a `Date` comes back as its ISO string and a `Map` or `Set` as `{}`. Handlers, events and `getJob` type them that way (`Jsonify<D>`), so reading a `Date` field as a `Date` is a compile error.
 - **Durability with the built-in store.** `MemoryStore` keeps jobs in the process, so they are lost when it exits. For jobs that must survive a restart or be shared across pods, use a durable store adapter.
 
 ## Choosing a retry strategy

@@ -186,7 +186,7 @@ queue.process(async (job) => {
 | `tz` | `string`, optional | The time zone. |
 | `everyMs` | `number`, optional | The period, in ms. |
 | `anchorAt` | `number`, optional | Start of the `every` grid, in store time. |
-| `template` | `{ name: string \| null; data: D; opts: Record<string, unknown> }` | The template, data read back. |
+| `template` | `{ name: string \| null; data: Jsonify<D>; opts: Record<string, unknown> }` | The template, data read back from JSON (a `Date` as its ISO string). |
 | `overlap` | `OverlapPolicy` | The overlap policy. |
 | `maxQueued` | `number` | The backlog cap. |
 | `paused` | `boolean` | `true` while paused. |

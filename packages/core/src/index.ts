@@ -51,6 +51,7 @@ export type { ScheduleTiming } from './scheduler/timing.js';
 export type { Schedule, ScheduleDefinition, ScheduleTemplate, UpsertResult } from './scheduler/schedules.js';
 export { serializeError, deserializeError } from './serialize/error.js';
 export type { SerializedError, JsonValue, SerializeOptions } from './serialize/error.js';
+export type { Jsonify } from './serialize/jsonify.js';
 export { consoleLogger, pinoLogger } from './logger/logger.js';
 export type { Logger, LogLevel, LogFields, PinoLike } from './logger/logger.js';
 export type { QueueEvents, WorkerEvents, ErrorEvent, ErrorSource, FailureReason, Unsubscribe, EventOrigin } from './events/types.js';

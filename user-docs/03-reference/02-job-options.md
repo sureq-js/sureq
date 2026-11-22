@@ -53,6 +53,8 @@ await queue.add(data, { singletonKey: 'sync:acme' })
 await queue.add(data, { id: 'welcome-ada', onDuplicate: (existing, incoming) => ({ ...existing.data, ...incoming }) })
 ```
 
+`existing.data` and `incoming` are the data as read back from JSON (`Jsonify<D>`), while the merge returns `D`. For JSON data they are the same type and the example compiles as is. When `D` holds a `Date`, `Map`, `Set` or other non-JSON value, convert those fields in the merge (`{ ...incoming, sendAt: new Date(incoming.sendAt) }`), or declare the field as what JSON stores (an ISO string).
+
 A job that already started is never replaced or merged. The add then reports `ignored` with `existingState: 'active'`.
 
 `uniqueWhile`:

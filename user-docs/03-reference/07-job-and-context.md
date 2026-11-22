@@ -23,7 +23,7 @@ In the examples, `queue` is a `Queue<{ to: string }>`, `job` is a `Job<{ to: str
 | `name` | `string \| null` | The job name; `null` for an unnamed job. |
 | `queue` | `string` | The queue name. |
 | `namespace` | `string` | The namespace. |
-| `data` | `D` | The job data. |
+| `data` | `Jsonify<D>` | The job data, as read back from JSON: a `Date` is its ISO string, a `Map` or `Set` is `{}`. See [Adding jobs](../02-guides/01-adding-jobs.md#common-questions). |
 | `state` | `JobState` | `'waiting'`, `'delayed'`, `'active'`, `'completed'`, `'failed'` or `'cancelled'`. |
 | `priority` | `number` | Higher runs first. |
 | `seq` | `number` | Order of insertion in the store. Negative for `first: true` under `fifo`. |
@@ -38,7 +38,7 @@ In the examples, `queue` is a `Queue<{ to: string }>`, `job` is a `Job<{ to: str
 | `workerId` | `string \| null` | The worker that claimed the latest attempt. Kept after it finishes. |
 | `lease` | `JobLease \| null` | Who holds the job and until when, while it is active; `null` otherwise. |
 | `token` | `number` | Fencing token of the latest claim; `0` before the first. Grows with every claim. |
-| `result` | `R \| null \| undefined` | The handler's result. `undefined` when none was stored, which is not the same as a stored `null`. |
+| `result` | `Jsonify<R> \| null \| undefined` | The handler's result, as read back from JSON. `undefined` when none was stored, which is not the same as a stored `null`. |
 | `error` | `SerializedError \| null` | The last failure. |
 | `failedReason` | `SerializedError \| null` | The same value as `error`. |
 | `lastError` | `SerializedError \| null` | The error of the last failed attempt before the latest redrive. |
