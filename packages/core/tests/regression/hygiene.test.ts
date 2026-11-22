@@ -114,7 +114,26 @@ describe('repository hygiene', () => {
       // a stand-in git: merge-base answers a sha, diff lists FILES (one per line)
       const bin = join(dir, 'bin');
       mkdirSync(bin);
-      writeFileSync(join(bin, 'git'), '#!/bin/sh\nif [ "$1" = merge-base ]; then echo base; else printf "%s" "$FILES"; fi\n', { mode: 0o755 });
+      // a stand-in git: merge-base answers a sha, diff lists FILES (one per line); GIT_FAIL=1 makes every call fail.
+      // A rename is listed as its new path only, unless diff is given --no-renames, as real git does.
+      writeFileSync(join(bin, 'git'), [
+        '#!/bin/sh',
+        '[ "$GIT_FAIL" = 1 ] && { echo "fatal: bad revision" >&2; exit 1; }',
+        'if [ "$1" = merge-base ]; then echo base; exit 0; fi',
+        'printf "%s" "$FILES"',
+        'case " $* " in *" --no-renames "*) [ -n "$RENAMED_FROM" ] && printf "%s\\n" "$RENAMED_FROM" ;; esac',
+        'exit 0',
+        '',
+      ].join('\n'), { mode: 0o755 });
+      const run = (files: string[], extra: Record<string, string> = {}, base = 'b') => {
+        const out = join(dir, `out-${Math.random()}`);
+        writeFileSync(out, '');
+        const r = spawnSync('sh', ['-c', script], {
+          encoding: 'utf8',
+          env: { ...process.env, PATH: `${bin}:${process.env['PATH']}`, BASE: base, HEAD: 'h', FILES: files.map((f) => `${f}\n`).join(''), GITHUB_OUTPUT: out, ...extra },
+        });
+        return { status: r.status, output: readFileSync(out, 'utf8').trim() };
+      };
       const code = (files: string[], base = 'b') => {
         const out = join(dir, `out-${Math.random()}`);
         writeFileSync(out, '');
@@ -132,6 +151,14 @@ describe('repository hygiene', () => {
       expect(code(['.github/workflows/ci.yml'])).toBe('code=true');
       // a manual run has no pull request base: everything runs
       expect(code(['README.md'], '')).toBe('code=true');
+      // the api-extractor reports under etc/ are checked by api:check, so they are not documentation
+      expect(code(['etc/core.api.md'])).toBe('code=true');
+      // a rename out of the source counts the deleted path too
+      expect(run(['user-docs/foo.md'], { RENAMED_FROM: 'packages/core/src/foo.ts' })).toMatchObject({ status: 0, output: 'code=true' });
+      // a git failure fails the step instead of passing as documentation-only
+      expect(run(['README.md'], { GIT_FAIL: '1' })).toMatchObject({ status: 1, output: '' });
+      // a pull request with no net change runs everything (the safe side)
+      expect(code([])).toBe('code=true');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -141,6 +168,11 @@ describe('repository hygiene', () => {
     }
     expect(yml).toMatch(/^  docs:\n    needs: changes\n    if: needs\.changes\.outputs\.code == 'false'$/m);
     expect(yml).toMatch(/^  ci:\n    if: always\(\)\n    needs: \[changes, docs, test, conformance, stress, types\]$/m);
+    // every other job is in ci's needs, so a job added later is part of the one required check
+    const jobs = [...(yml.split(/^jobs:\n/m)[1] ?? '').matchAll(/^ {2}([a-z][\w-]*):$/gm)].map((m) => m[1]!).filter((j) => j !== 'ci');
+    const needs = /^  ci:\n(?: {4}.*\n)*? {4}needs: \[(.*)\]$/m.exec(yml)?.[1]?.split(/,\s*/) ?? [];
+    expect(jobs.length).toBeGreaterThan(5);
+    expect(needs.sort()).toEqual([...jobs].sort());
   });
 
   it('repo: CI\'s ci job fails unless every job passed or was skipped', () => {
@@ -162,15 +194,18 @@ describe('repository hygiene', () => {
       // a stand-in for the local CI run, so the test sees whether the hook started it
       mkdirSync(join(dir, 'scripts'));
       writeFileSync(join(dir, 'scripts', 'ci-local.sh'), '#!/bin/sh\necho ran-ci-local\n');
-      const push = (refs: string[]) => {
+      const push = (refs: string[], localSha = 'a') => {
         const env = { ...process.env, SUREQ_SKIP_PREPUSH: '' };
-        const r = spawnSync('sh', ['-c', hook], { cwd: dir, encoding: 'utf8', env, input: refs.map((ref) => `${ref} a ${ref} b\n`).join('') });
+        const r = spawnSync('sh', ['-c', hook], { cwd: dir, encoding: 'utf8', env, input: refs.map((ref) => `${ref} ${localSha} ${ref} b\n`).join('') });
         expect(r.status).toBe(0);
         return r.stdout.includes('ran-ci-local');
       };
       expect(push(['refs/tags/@sureq/core@1.0.2', 'refs/tags/@sureq/store-test@1.0.2'])).toBe(false);
       expect(push(['refs/heads/main'])).toBe(true);
       expect(push(['refs/tags/@sureq/core@1.0.2', 'refs/heads/docs/agent-skill'])).toBe(true);
+      // deleting a branch pushes no commits (git sends an all-zero local sha), and an up-to-date push sends no refs
+      expect(push(['refs/heads/old-branch'], '0000000000000000000000000000000000000000')).toBe(false);
+      expect(push([])).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

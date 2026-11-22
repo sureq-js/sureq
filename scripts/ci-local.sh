@@ -2,7 +2,8 @@
 # Runs every step of every job in .github/workflows/ci.yml, in the same order, on this machine.
 # Stops at the first failure. Used by .husky/pre-push, so a push that would fail on GitHub fails here first.
 #
-# Covered: test, conformance, stress and types (TypeScript 5.0 and latest) jobs.
+# Covered: test, conformance, stress and types (TypeScript 5.0 and 7.0) jobs. It always runs all of them;
+# on GitHub a pull request that changes only documentation runs the docs job instead (a subset of these).
 # Not covered here: the Node 24 leg of the matrix (this runs on the local Node), and Linux.
 # Those still run on GitHub, and a Node or OS difference can still fail there.
 #
