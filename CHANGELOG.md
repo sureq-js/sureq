@@ -4,7 +4,7 @@ All notable changes to `@sureq/core`. From 1.0, semver applies to the public API
 The store contract stays experimental and may change in a minor release until it is declared stable.
 1.0.0 is the first published release;
 
-## Unreleased
+## 1.0.2 - 2026-11-22
 
 Job data and results are stored as JSON, but their types claimed the handler got back exactly what was added: `new Queue<{ sendAt: Date }>` compiled, `job.data.sendAt.getTime()` threw on every attempt, and the job became a dead letter. No runtime behaviour, stored job format or store contract changes, except what the queue `filter` sees (below).
 
