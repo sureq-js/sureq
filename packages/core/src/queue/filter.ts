@@ -1,7 +1,9 @@
 import { FilterError, JobRejectedError } from '../errors/catalog.js';
+import type { Jsonify } from '../serialize/jsonify.js';
 import type { QueueEvents } from '../events/types.js';
 import type { Logger } from '../logger/logger.js';
 import { deepFreeze } from '../util/freeze.js';
+import { serializeValue } from '../serialize/value.js';
 import type { AddOptions } from './options.js';
 import { platform, type Timer } from '../platform/index.js';
 
@@ -22,8 +24,8 @@ export interface FilterContext<D = unknown> {
   readonly operation: 'add' | 'replace' | 'merge' | 'schedule';
 }
 
-/** Judges a job before it is stored; sees a frozen copy of the data. */
-export type FilterFn<D = unknown> = (data: Readonly<D>, ctx: FilterContext<D>) => FilterVerdict | Promise<FilterVerdict>;
+/** Judges a job before it is stored; sees a frozen copy of the data as it will be stored (see {@link Jsonify}). */
+export type FilterFn<D = unknown> = (data: Jsonify<D>, ctx: FilterContext<D>) => FilterVerdict | Promise<FilterVerdict>;
 
 export const MAX_REASON_CHARS = 1000;
 /** Filter calls in flight at once for one `addBulk`. */
@@ -44,7 +46,13 @@ function rejection(v: unknown): Rejection | null | undefined {
 
 const TIMED_OUT = Symbol('timed out');
 
-/** Resolves when accepted (or no filter); else emits `rejected`, logs, and throws JobRejectedError or FilterError. */
+/** Job data serialized once, by the filter, and reused when the job is built so `toJSON` runs once per add. */
+export type Serialized = { json: string; bytes: number };
+
+/**
+ * Resolves when accepted (or no filter), with the data serialized as the filter saw it (`undefined` when there is no
+ * filter or the data is not serializable); else emits `rejected`, logs, and throws JobRejectedError or FilterError.
+ */
 export function makeFilter(setup: {
   fn: FilterFn | undefined;
   timeoutMs: number;
@@ -52,15 +60,24 @@ export function makeFilter(setup: {
   logger: Logger;
   /** `name` is the rejected add's job name. */
   emit(e: QueueEvents['rejected'], name: string | null): void;
-}): (data: unknown, ctx: Omit<FilterContext, 'queue'>) => Promise<void> {
+}): (data: unknown, ctx: Omit<FilterContext, 'queue'>) => Promise<Serialized | undefined> {
   const { fn, timeoutMs, queue, logger, emit } = setup;
-  if (!fn) return () => Promise.resolve();
+  if (!fn) return () => Promise.resolve(undefined);
   return async (data, ctx) => {
     let view = data;
+    let stored: Serialized | undefined;
     try {
-      view = deepFreeze(structuredClone(data));
+      // the data as stored, so the filter sees what the merge and the handler see (a Date as its ISO string)
+      stored = serializeValue(data);
+      view = deepFreeze(JSON.parse(stored.json) as unknown);
     } catch {
-      // ponytail: data that structuredClone cannot copy is passed as is; serialization rejects it right after unless the filter does
+      // not serializable (a cycle, a bigint): a frozen copy where structuredClone can make one, else as is;
+      // serialization rejects it right after unless the filter does
+      try {
+        view = deepFreeze(structuredClone(data));
+      } catch {
+        // ponytail: not cloneable either (a function): passed as is
+      }
     }
     let timer: Timer | undefined;
     let verdict: unknown;
@@ -75,7 +92,7 @@ export function makeFilter(setup: {
       timer?.cancel();
     }
     const r = rejection(verdict);
-    if (r === null) return;
+    if (r === null) return stored;
     if (r === undefined) {
       const got = verdict === null ? 'null' : typeof verdict;
       throw new FilterError({ timedOut: false, cause: new TypeError(`the filter returned ${got}, not a verdict`) });

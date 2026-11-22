@@ -69,7 +69,9 @@ sched:team-digest:1794701719162 team-digest
 
 **What if the previous job is still running at the next tick?** The `overlap` option decides: skip the tick, queue it, or fire anyway. See [Overlap](../03-reference/13-schedules.md#overlap).
 
-**What happens to ticks missed while no pod ran?** They collapse into one job for the oldest missed tick. Then the schedule goes on as usual.
+**What happens to ticks missed while no pod ran?** They collapse into one job for the oldest missed tick. Then the schedule goes on as usual. A deploy that keeps every pod down from 10:02 to 10:18 misses the 10:05, 10:10 and 10:15 ticks of a five-minute cron: at 10:18 one job fires for 10:05, and the next is the 10:20 tick. It is not configurable yet, but a handler can skip a late tick or run every missed one from `job.schedule.scheduledFor`. See [Missed ticks](../03-reference/13-schedules.md#missed-ticks).
+
+**How do cron times behave across a daylight-saving change?** With `tz` set, a cron with a fixed hour (`30 2 * * *`) follows the clock: a skipped local time fires once at the end of the gap, and a repeated one fires once, in the first pass. A cron whose hour is `*` or a step (`*/2`) follows elapsed time: a skipped time fires nothing extra, and a repeated one fires in both passes. `every` ignores daylight saving. See [Cron](../03-reference/13-schedules.md#cron) for worked examples.
 
 ## Reference
 
@@ -78,5 +80,6 @@ sched:team-digest:1794701719162 team-digest
 - [ScheduleDefinition](../03-reference/13-schedules.md#scheduledefinition)
 - [Cron](../03-reference/13-schedules.md#cron)
 - [Every](../03-reference/13-schedules.md#every)
+- [Missed ticks](../03-reference/13-schedules.md#missed-ticks)
 - [Queue options: scheduler](../03-reference/01-queue.md#scheduler)
 - [Events: schedules](../03-reference/06-events.md#schedules)

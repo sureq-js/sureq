@@ -1,4 +1,5 @@
 import { DeserializationError } from '../errors/catalog.js';
+import type { Jsonify } from '../serialize/jsonify.js';
 import type { SerializedError } from '../serialize/error.js';
 import type { DeadLetterInfo, JobRecord, Payload, RedriveOutcome } from '../store/contract.js';
 import type { RedriveOptions } from '../admin/redrive.js';
@@ -70,10 +71,10 @@ export interface Job<D = unknown, R = unknown> {
   readonly lease: JobLease | null;
   /** Fencing token of the latest claim; 0 before the first. */
   readonly token: number;
-  /** The job data. */
-  readonly data: D;
-  /** `undefined` when no result was stored, distinct from a stored `null`. */
-  readonly result: R | null | undefined;
+  /** The job data, as read back from JSON (see {@link Jsonify}). */
+  readonly data: Jsonify<D>;
+  /** The result as read back from JSON; `undefined` when no result was stored, distinct from a stored `null`. */
+  readonly result: Jsonify<R> | null | undefined;
   /** The last failure, or null. */
   readonly error: SerializedError | null;
   /** The last failure: the same value as `error`, kept after a later success. */
@@ -166,8 +167,8 @@ export function toJob<D = unknown, R = unknown>(rec: JobRecord, now: number, bou
     workerId: rec.workerId,
     lease,
     token: rec.token,
-    data: read('data')(payloadText(rec.data)) as D,
-    result: rec.result === null ? undefined : (read('result')(payloadText(rec.result)) as R | null),
+    data: read('data')(payloadText(rec.data)) as Jsonify<D>,
+    result: rec.result === null ? undefined : (read('result')(payloadText(rec.result)) as Jsonify<R> | null),
     error,
     failedReason: error,
     deadLetter: rec.deadLetter && Object.freeze({ at: rec.deadLetter.at, reason: rec.deadLetter.reason }),

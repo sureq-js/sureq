@@ -42,8 +42,28 @@ Some tests are reported as skipped on purpose:
   commit the changed report under `etc/` with the change.
 - **Code text names behaviour, not plans.** Comments, test titles and messages describe what the code does; they do
   not refer to planning documents, ticket numbers or release numbers.
-- **What is committed.** Source, tests, config, scripts and `CHANGELOG.md` are committed; every user-visible change
-  gets a CHANGELOG line. Planning documents are kept outside the repository.
+- **What is committed.** Source, tests, config, scripts and each package's `CHANGELOG.md` are committed; every
+  user-visible change gets a line in the changelog of the package it changes. Planning documents are kept outside the
+  repository.
+
+## Releases
+
+Each package under `packages/` is versioned and published on its own. A change to `@sureq/core` does not republish
+`@sureq/store-test` or a store adapter: their `@sureq/core` peer range (`^1.0.1`) already accepts a newer compatible
+core.
+
+1. Bump `version` in that package's `package.json` (and, for core, `SUREQ_VERSION` and the agent skill's
+   `metadata.version`, which tests keep equal to it). Move its changelog's notes under `## <version> - <date>`.
+2. Raise another package's `@sureq/core` peer range only when it starts to need a newer core, and release that
+   package too, with a changelog line saying so.
+3. Merge to `main`, then push a tag `<package name>@<version>` on that commit, such as `@sureq/core@1.0.2`. The
+   `publish` workflow checks the tag against the package's version and that the commit is on `main`, waits for the
+   `npm-publish` environment's approval, and publishes only that package. A version with a hyphen
+   (`1.1.0-rc.1`) is published under the `next` dist-tag.
+
+A new package is published by hand once, because npm's trusted publishing can only be set up for a package that
+exists. After that first publish, add the trusted publisher on npmjs.com (this repository, workflow `publish.yml`,
+environment `npm-publish`), add the package to the root `CHANGELOG.md` index, and release it with tags from then on.
 
 ## Commit style
 

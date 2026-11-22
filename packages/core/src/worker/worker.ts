@@ -1,4 +1,5 @@
 import { isObliterating } from '../admin/obliterate.js';
+import type { Jsonify } from '../serialize/jsonify.js';
 import { isSureQError, type SureQError } from '../errors/base.js';
 import {
   InternalError, JobCancelledError, JobTimeoutError, LeaseLostError, ResultTooLargeError, ShutdownError, StoreFormatError, StoreUnavailableError,
@@ -70,7 +71,7 @@ export interface WorkerHost extends Readonly<Leases> {
 }
 
 /** A worker event listener for event `K`. */
-export type Listener<D, R, K extends keyof WorkerEvents> = (payload: WorkerEvents<Job<D, R>, R>[K]) => void | Promise<void>;
+export type Listener<D, R, K extends keyof WorkerEvents> = (payload: WorkerEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>;
 
 /** A `ctx.fail` call decides the attempt, whatever the handler returned or threw afterwards. */
 function failRecordOr(ctx: WorkerContext, outcome: Outcome): Outcome {
@@ -113,7 +114,7 @@ export class Worker<D = unknown, R = unknown> {
   readonly #names: Set<string | null>;
   readonly #opts: ResolvedWorkerOptions & Polling;
   readonly #delay: PollDelay;
-  readonly #events: TypedEmitter<WorkerEvents<Job<D, R>, R>>;
+  readonly #events: TypedEmitter<WorkerEvents<Job<D, R>, Jsonify<R>>>;
   /** Running attempts (keyed `id:token`: a stale handler and a newer attempt of the same job can both run here) and batches. */
   readonly #inFlight = new Map<string, Slot>();
   /** Releases in progress, with their job ids. */
@@ -908,7 +909,7 @@ export class Worker<D = unknown, R = unknown> {
           // Listeners see what a later getJob sees: the stored, round-tripped result and store-time duration.
           const job = removed ? this.#removedJob(rec, { state: 'completed', result: complete.result }, now) : await this.#snapshot(rec.id, active, now);
           const durationMs = job.finishedAt !== null && job.startedAt !== null ? Math.max(0, job.finishedAt - job.startedAt) : 0;
-          this.#events.emit('completed', { job, result: job.result as R, durationMs, ...(removed && { removed }) });
+          this.#events.emit('completed', { job, result: job.result as Jsonify<R>, durationMs, ...(removed && { removed }) });
           await this.#evaluateDrained();
         });
       }

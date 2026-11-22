@@ -15,7 +15,7 @@ export interface FormatSupport {
 export const FORMAT_SUPPORT: Readonly<FormatSupport> = Object.freeze({ current: 1, minReadable: 1, maxReadable: 1 });
 
 /** This build's version; a test keeps it equal to package.json. */
-export const SUREQ_VERSION = '1.0.1';
+export const SUREQ_VERSION = '1.0.2';
 
 const minorOf = (v: string): [number, number] | undefined => {
   const m = /^(\d+)\.(\d+)\.\d+/.exec(v);

@@ -2,6 +2,7 @@ import {
   InvalidOptionError, PayloadTooLargeError, ScheduleConflictError, ScheduleNotFoundError, SerializationError, type ConfigIssue,
 } from '../errors/catalog.js';
 import { payloadText } from '../job/job.js';
+import type { Jsonify } from '../serialize/jsonify.js';
 import type { Logger } from '../logger/logger.js';
 import { buildNewJob } from '../queue/add.js';
 import type { QueueInternals } from '../queue/queue.js';
@@ -57,8 +58,8 @@ export interface Schedule<D = unknown> {
   everyMs?: number;
   /** Start of the `every` grid, in store time. */
   anchorAt?: number;
-  /** The template, with its data read back. */
-  template: { name: string | null; data: D; opts: Record<string, unknown> };
+  /** The template, with its data read back from JSON (see {@link Jsonify}). */
+  template: { name: string | null; data: Jsonify<D>; opts: Record<string, unknown> };
   /** The overlap policy. */
   overlap: OverlapPolicy;
   /** The backlog cap under `overlap: 'queue'`. */
@@ -175,7 +176,7 @@ export function toSchedule<D>(rec: ScheduleRecord): Schedule<D> {
     ...(rec.tz !== undefined && { tz: rec.tz }),
     ...(rec.everyMs !== undefined && { everyMs: rec.everyMs }),
     ...(rec.anchorAt !== undefined && { anchorAt: rec.anchorAt }),
-    template: { name: rec.template.name, data: JSON.parse(payloadText(rec.template.data)) as D, opts: rec.template.opts },
+    template: { name: rec.template.name, data: JSON.parse(payloadText(rec.template.data)) as Jsonify<D>, opts: rec.template.opts },
     overlap: rec.overlap,
     maxQueued: rec.maxQueued,
     paused: rec.paused,

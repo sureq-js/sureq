@@ -44,6 +44,7 @@ export {
 export type { ConfigIssue, ConfigIssueCode, Issue, StoreErrorOptions, FormatReason, RecordKind } from './errors/catalog.js';
 export { serializeError, deserializeError } from './serialize/error.js';
 export type { SerializedError, JsonValue, SerializeOptions } from './serialize/error.js';
+export type { Jsonify } from './serialize/jsonify.js';
 export { describeMetrics } from './metrics/catalogue.js';
 export type { MetricDescriptor, MetricSample, MetricType, MetricUnit, MetricsSnapshot } from './metrics/catalogue.js';
 export type { Duration } from './util/duration.js';

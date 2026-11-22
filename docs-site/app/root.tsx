@@ -6,6 +6,7 @@ import {
   ScrollRestoration,
 } from 'react-router'
 
+import { GOATCOUNTER_ENDPOINT, GOATCOUNTER_SCRIPT, PageviewTracker } from '@/components/Analytics'
 import { Providers, themeScript } from '@/components/Providers'
 
 import '@/styles/tailwind.css'
@@ -23,6 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="theme-color" content="#059669" />
         <meta name="google-site-verification" content="qL28fqJceenSR48P4NILzPuGdvaTmjUt5KJp-bvc_mg" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script data-goatcounter={GOATCOUNTER_ENDPOINT} async src={GOATCOUNTER_SCRIPT} />
         <Meta />
         <Links />
       </head>
@@ -38,7 +40,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />
+  return (
+    <>
+      <PageviewTracker />
+      <Outlet />
+    </>
+  )
 }
 
 export function ErrorBoundary() {

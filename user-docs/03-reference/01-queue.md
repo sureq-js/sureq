@@ -76,7 +76,7 @@ new Queue('emails', { maxPayloadBytes: 64 * 1024 })
 new Queue('emails', { maxBulkSize: 500 })
 ```
 
-A filter returns `true` to accept, `false` to reject with reason `'filtered'`, a string to reject with that reason, or `{ reject, code?, details? }`. Anything else, or a throw, is a `FilterError`: the filter fails closed.
+The filter sees the data as it will be stored, the same JSON the handler gets (a `Date` as its ISO string), and that same JSON is what the job stores, so an object's `toJSON()` runs once per add. A filter returns `true` to accept, `false` to reject with reason `'filtered'`, a string to reject with that reason, or `{ reject, code?, details? }`. Anything else, or a throw, is a `FilterError`: the filter fails closed.
 
 ### Results and errors
 

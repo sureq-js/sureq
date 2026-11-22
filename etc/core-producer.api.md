@@ -353,7 +353,7 @@ export class DuplicateJobError extends SureQError {
 }
 
 // @public
-export type DuplicateRule<D = unknown> = 'ignore' | 'replace' | 'reject' | ((existing: Readonly<Job<D>>, incoming: Readonly<D>) => D);
+export type DuplicateRule<D = unknown> = 'ignore' | 'replace' | 'reject' | ((existing: Readonly<Job<D>>, incoming: Readonly<Jsonify<D>>) => D);
 
 // @public
 export type Duration = number | `${number}${'ms' | 's' | 'm' | 'h' | 'd'}`;
@@ -451,7 +451,7 @@ export class FilterError extends SureQError {
 }
 
 // @public
-export type FilterFn<D = unknown> = (data: Readonly<D>, ctx: FilterContext<D>) => FilterVerdict | Promise<FilterVerdict>;
+export type FilterFn<D = unknown> = (data: Jsonify<D>, ctx: FilterContext<D>) => FilterVerdict | Promise<FilterVerdict>;
 
 // @public
 export type FilterVerdict = true | false | string | {
@@ -633,7 +633,7 @@ export interface Job<D = unknown, R = unknown> {
     cancel(): Promise<JobCancelResult<Job<D, R>>>;
     readonly crashCount: number;
     readonly createdAt: number;
-    readonly data: D;
+    readonly data: Jsonify<D>;
     readonly deadLetter: DeadLetterInfo | null;
     readonly error: SerializedError | null;
     readonly failedReason: SerializedError | null;
@@ -651,7 +651,7 @@ export interface Job<D = unknown, R = unknown> {
     readonly queue: string;
     readonly redriveCount: number;
     remove(): Promise<boolean>;
-    readonly result: R | null | undefined;
+    readonly result: Jsonify<R> | null | undefined;
     readonly retainUntil: number | null;
     retry(opts?: RedriveOptions): Promise<RedriveOutcome>;
     readonly runAt: number;
@@ -829,6 +829,11 @@ export class JobTimeoutError extends SureQError {
     readonly jobId: string;
     readonly timeoutMs: number;
 }
+
+// @public
+export type Jsonify<T> = T extends JsonValue ? T : T extends string | number | boolean | null ? T : T extends undefined ? null : T extends symbol | bigint | Function ? never : T extends {
+    toJSON(): infer J;
+} ? Jsonify<J> : T extends DataView ? {} : T extends ArrayBufferView ? Record<string, number> : T extends ArrayBuffer ? {} : T extends ReadonlyMap<unknown, unknown> | ReadonlySet<unknown> | WeakMap<object, unknown> | WeakSet<object> | RegExp ? {} : T extends readonly unknown[] ? { [K in keyof T]: T[K] extends (infer V) ? (V extends undefined | symbol | Function ? null : Jsonify<V>) : never; } : T extends object ? ({ [K in keyof T as K extends symbol ? never : unknown extends T[K] ? K : [Exclude<T[K], undefined | symbol | Function>] extends [never] ? never : undefined extends T[K] ? never : [Extract<T[K], symbol | Function>] extends [never] ? K : never]: Jsonify<T[K]>; } & { [K in keyof T as K extends symbol ? never : unknown extends T[K] ? never : [Exclude<T[K], undefined | symbol | Function>] extends [never] ? never : undefined extends T[K] ? K : [Extract<T[K], symbol | Function>] extends [never] ? never : K]?: Jsonify<Exclude<T[K], undefined | symbol | Function>>; }) extends (infer O) ? { [K in keyof O]: O[K]; } : never : T;
 
 // @public
 export type JsonValue = string | number | boolean | null | JsonValue[] | {
@@ -1169,9 +1174,9 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
     }): Promise<{
         removed: number;
     }>;
-    off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, R>[K]) => void | Promise<void>): void;
-    on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, R>[K]) => void | Promise<void>): Unsubscribe;
-    once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, R>[K]) => void | Promise<void>): Unsubscribe;
+    off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): void;
+    on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe;
+    once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe;
     pause(): Promise<{
         changed: boolean;
     }>;
@@ -1620,7 +1625,7 @@ export interface Schedule<D = unknown> {
     runCount: number;
     template: {
         name: string | null;
-        data: D;
+        data: Jsonify<D>;
         opts: Record<string, unknown>;
     };
     tz?: string;

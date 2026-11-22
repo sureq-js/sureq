@@ -31,7 +31,7 @@ If you built 0.x from source, these are the changes you may notice in 1.0:
 - **Test-only members are gone from the types.** `queue.internals`, `MemoryStore`'s `dump()`, `unsafeMutate()` and `faults` option, and the `random` option are no longer in the published types. Test through the public API instead. See [Testing your jobs](../02-guides/15-testing-your-jobs.md).
 - **The store format and store contract did not change, but the contract version is now 1.** Both 0.3 and 1.0 write store format 1, and the contract itself is the same. 0.3 numbered it 2; 1.0, the first published release, numbers it 1. A store adapter built for 0.3 must set `contractVersion` to `STORE_CONTRACT_VERSION` (1), or 1.0 refuses it at start-up with `StoreContractVersionError`.
 
-The full list is in the CHANGELOG.
+The full list is in the CHANGELOG
 
 ## Before each upgrade
 

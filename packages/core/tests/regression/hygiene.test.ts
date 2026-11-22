@@ -103,55 +103,62 @@ describe('repository hygiene', () => {
     }
   });
 
-  it('repo: the publish workflow runs only on a release tag, from the approval environment, and requests an OIDC token', () => {
+  it('repo: the publish workflow runs only on a package release tag, from the approval environment, and requests an OIDC token', () => {
     const yml = read('.github/workflows/publish.yml');
     const on = /^on:\n((?:[ \t]+.*\n|\n)*)/m.exec(yml)?.[1] ?? '';
-    expect(on).toMatch(/^  push:\n    tags:\n      - 'v\*'$/m);
+    expect(on).toMatch(/^  push:\n    tags:\n      - '@sureq\/\*@\*'$/m);
     expect(on).not.toMatch(/workflow_dispatch/);
     expect(yml).toMatch(/^    environment: npm-publish$/m);
     expect(yml).toMatch(/^\s+id-token: write$/m);
     expect(yml).toMatch(/--provenance/);
+    // one package per run: the one the tag names, under the dist-tag the tag check derived
+    const publishes = yml.split('\n').filter((l) => /\bnpm publish\b/.test(l));
+    expect(publishes).toHaveLength(1);
+    expect(publishes[0]).toContain('--tag ${{ steps.pkg.outputs.dist_tag }}');
+    expect(publishes[0]).toContain('-w ${{ steps.pkg.outputs.name }}');
+    expect(yml.indexOf('id: pkg')).toBeLessThan(yml.indexOf('npm ci'));
   });
 
-  it('repo: the publish workflow publishes a prerelease under the next tag, never latest', () => {
+  it('repo: the publish tag check accepts only a public package at its version on main; a prerelease goes under next', () => {
     const yml = read('.github/workflows/publish.yml');
-    expect(yml).toContain(`version=$(node -p "require('./packages/core/package.json').version")`);
-    // run the workflow's own case block, the way the step runs it
-    const block = /^\s*(case "\$version" in\n[\s\S]*?\n\s*esac)$/m.exec(yml)?.[1];
-    expect(block).toBeDefined();
-    // GITHUB_OUTPUT is a file, as on a runner; /dev/stdout cannot be reopened on Linux, where a child's stdout is a socket
-    const tagFor = (version: string) => {
-      const dir = mkdtempSync(join(tmpdir(), 'sureq-tag-'));
-      try {
-        const out = join(dir, 'output');
-        writeFileSync(out, '');
-        spawnSync('sh', ['-c', block!], { encoding: 'utf8', env: { ...process.env, version, GITHUB_OUTPUT: out } });
-        return readFileSync(out, 'utf8');
-      } finally {
-        rmSync(dir, { recursive: true, force: true });
-      }
-    };
-    expect(tagFor('1.0.0-rc.1')).toBe('tag=next\n');
-    expect(tagFor('1.0.0')).toBe('tag=latest\n');
-    // the tag is shared, so the step before install refuses packages whose versions differ
-    const check = /^\s*(node -e "\n[\s\S]*?package versions differ[\s\S]*?\n\s*")$/m.exec(yml)?.[1];
-    expect(check).toBeDefined();
-    expect(yml.indexOf(check!)).toBeLessThan(yml.indexOf('npm ci'));
-    expect(spawnSync('sh', ['-c', check!], { cwd: repoRoot, encoding: 'utf8' }).status).toBe(0);
-    const skewed = mkdtempSync(join(tmpdir(), 'sureq-versions-'));
+    // the tag-check step's own script, dedented, run the way the runner runs it
+    const step = /^ {8}id: pkg\n[\s\S]*?^ {8}run: \|\n((?: {10}.*\n)+)/m.exec(yml)?.[1];
+    expect(step).toBeDefined();
+    const script = step!.replace(/^ {10}/gm, '');
+    const repo = mkdtempSync(join(tmpdir(), 'sureq-publish-'));
     try {
-      for (const [dir, version] of [['core', '1.0.0-rc.1'], ['store-test', '1.0.0']]) {
-        mkdirSync(join(skewed, 'packages', dir!), { recursive: true });
-        writeFileSync(join(skewed, 'packages', dir!, 'package.json'), JSON.stringify({ version }));
-      }
-      const r = spawnSync('sh', ['-c', check!], { cwd: skewed, encoding: 'utf8' });
-      expect(r.status).toBe(1);
-      expect(r.stderr).toContain('package versions differ');
+      const pkg = (dir: string, json: object) => {
+        mkdirSync(join(repo, 'packages', dir), { recursive: true });
+        writeFileSync(join(repo, 'packages', dir, 'package.json'), JSON.stringify(json));
+      };
+      pkg('core', { name: '@sureq/core', version: '1.0.2' });
+      pkg('store-test', { name: '@sureq/store-test', version: '1.0.1' });
+      pkg('internal', { name: '@sureq/internal', version: '1.0.0', private: true });
+      pkg('rc', { name: '@sureq/rc', version: '1.1.0-rc.1' });
+      // a stand-in git: `merge-base --is-ancestor` answers with ON_MAIN's status
+      const bin = join(repo, 'bin');
+      mkdirSync(bin);
+      writeFileSync(join(bin, 'git'), '#!/bin/sh\nexit "${ON_MAIN:-0}"\n', { mode: 0o755 });
+      const run = (tag: string, onMain = 0) => {
+        const out = join(repo, `output-${Math.random()}`);
+        writeFileSync(out, '');
+        const r = spawnSync('sh', ['-c', script], {
+          cwd: repo, encoding: 'utf8',
+          env: { ...process.env, PATH: `${bin}:${process.env['PATH']}`, TAG: tag, ON_MAIN: String(onMain), GITHUB_OUTPUT: out },
+        });
+        return { status: r.status, output: readFileSync(out, 'utf8'), log: r.stdout + r.stderr };
+      };
+      expect(run('@sureq/core@1.0.2')).toMatchObject({ status: 0, output: 'name=@sureq/core\ndist_tag=latest\n' });
+      expect(run('@sureq/store-test@1.0.1')).toMatchObject({ status: 0, output: 'name=@sureq/store-test\ndist_tag=latest\n' });
+      expect(run('@sureq/rc@1.1.0-rc.1')).toMatchObject({ status: 0, output: 'name=@sureq/rc\ndist_tag=next\n' });
+      expect(run('@sureq/core@1.0.3')).toMatchObject({ status: 1, output: '' });
+      expect(run('@sureq/core@1.0.3').log).toContain('does not match');
+      expect(run('@sureq/nope@1.0.0').log).toContain('names no package');
+      expect(run('@sureq/internal@1.0.0').log).toContain('is private');
+      expect(run('@sureq/core@1.0.2', 1)).toMatchObject({ status: 1, output: '' });
+      expect(run('@sureq/core@1.0.2', 1).log).toContain('not point at a commit on main');
     } finally {
-      rmSync(skewed, { recursive: true, force: true });
+      rmSync(repo, { recursive: true, force: true });
     }
-    const publishes = yml.split('\n').filter((l) => /\bnpm publish\b/.test(l));
-    expect(publishes.length).toBeGreaterThan(0);
-    for (const line of publishes) expect(line).toContain('--tag ${{ steps.dist-tag.outputs.tag }}');
   });
 });

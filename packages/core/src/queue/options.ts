@@ -1,4 +1,5 @@
 import { InvalidOptionError, type ConfigIssue } from '../errors/catalog.js';
+import type { Jsonify } from '../serialize/jsonify.js';
 import type { Logger } from '../logger/logger.js';
 import type { Store } from '../store/contract.js';
 import { storeCapabilityIssues } from '../store/capabilities.js';
@@ -22,7 +23,7 @@ const NAMESPACE_RULE = 'expected 1-64 characters from A-Z a-z 0-9 _ . -';
  * What `add` does when the id is already held: return the holder (`'ignore'`, default), overwrite a waiting
  * or delayed holder (`'replace'`), throw DuplicateJobError (`'reject'`), or merge with a pure function.
  */
-export type DuplicateRule<D = unknown> = 'ignore' | 'replace' | 'reject' | ((existing: Readonly<Job<D>>, incoming: Readonly<D>) => D);
+export type DuplicateRule<D = unknown> = 'ignore' | 'replace' | 'reject' | ((existing: Readonly<Job<D>>, incoming: Readonly<Jsonify<D>>) => D);
 export const DUPLICATE_RULES = ['ignore', 'replace', 'reject'] as const;
 
 /** Every queue option. */

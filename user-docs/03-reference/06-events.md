@@ -12,7 +12,7 @@ stop()
 - Listeners run in the order they were added. A listener may be `async`.
 - A listener that throws or rejects never breaks SureQ. Its failure is reported as an `error` event with `source: 'listener'`. A failing `error` listener is only logged.
 - An `error` event with no listener is logged. Always listen for `error`.
-- `J` below is the job snapshot, a [`Job<D, R>`](07-job-and-context.md#job), and `R` is the result type.
+- `J` below is the job snapshot, a [`Job<D, R>`](07-job-and-context.md#job), and `R` is the result type. The `completed` event's `result` is `Jsonify<R>`: the result as read back from JSON (a `Date` as its ISO string).
 
 ## Who emits what
 
@@ -75,7 +75,7 @@ queue.on('rejected', ({ reason, reasonCode }) => console.log(reason, reasonCode)
 |---|---|---|
 | `active` | `{ job: J; workerId: string; origin? }` | A handler started on the job. In a batch, once per job when the handler starts. |
 | `progress` | `{ job: J; progress: JobProgress; origin? }` | A `ctx.progress` value was stored. At most once per `progressInterval` per job. |
-| `completed` | `{ job: J; result: R; durationMs: number; removed?: boolean; origin? }` | The job completed. `removed: true` when retention deleted it at once (`resultGrace: 0`). |
+| `completed` | `{ job: J; result: Jsonify<R>; durationMs: number; removed?: boolean; origin? }` | The job completed. `removed: true` when retention deleted it at once (`resultGrace: 0`). |
 | `retrying` | `{ job: J; error: SerializedError; delayMs: number; runAt: number; origin? }` | The attempt failed and the job will run again at `runAt` (store time). |
 | `failed` | `{ job: J; error: SerializedError; reason: FailureReason; removed?: boolean; origin? }` | The job failed for good. `reason` is `'attempts-exhausted'`, `'unrecoverable'` or `'not-retryable'`. |
 | `deadLettered` | `{ job: J; reason: DeadLetterReason; origin? }` | The failed job was kept as a dead letter. Right after its `failed` event. |

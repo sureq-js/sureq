@@ -157,6 +157,45 @@ describe('filter on add', () => {
     await expect(setup(() => true).q.add({ n: 1n })).rejects.toBeInstanceOf(SerializationError);
   });
 
+  it('filter: sees the data as stored (a Date as its ISO string, toJSON output, undefined as null)', async () => {
+    const seen: unknown[] = [];
+    const { q } = setup((d) => (seen.push(d), true));
+    await q.add({ at: new Date(0), v: { toJSON: () => 7 } });
+    await q.add(undefined as never);
+    expect(seen[0]).toEqual({ at: '1970-01-01T00:00:00.000Z', v: 7 });
+    expect(typeof (seen[0] as { at: unknown }).at).toBe('string');
+    expect(seen[1]).toBeNull();
+  });
+
+  it('filter: toJSON runs once per add, so the filter sees exactly what is stored', async () => {
+    let calls = 0;
+    const seen: unknown[] = [];
+    const { q } = setup((d) => (seen.push(d), true));
+    const { job } = await q.add({ v: { toJSON: () => ++calls } });
+    expect(calls).toBe(1);
+    expect(seen[0]).toEqual({ v: 1 });
+    expect(job.data).toEqual({ v: 1 });
+  });
+
+  it('filter: toJSON runs once per addBulk item too', async () => {
+    let calls = 0;
+    const { q } = setup(() => true);
+    const [out] = await q.addBulk([{ data: { v: { toJSON: () => ++calls } } }]);
+    expect(calls).toBe(1);
+    expect(out!.ok && out!.job.data).toEqual({ v: 1 });
+  });
+
+  it('filter: data that cannot be serialized reaches the filter as a frozen copy; the caller\'s object is not frozen', async () => {
+    let seen: unknown;
+    const { q } = setup((d) => ((seen = d), true));
+    const data = { n: 1n, nested: { a: 1 } };
+    await expect(q.add(data)).rejects.toBeInstanceOf(SerializationError);
+    expect(seen).toEqual(data);
+    expect(seen).not.toBe(data);
+    expect(Object.isFrozen((seen as { nested: object }).nested)).toBe(true);
+    expect(Object.isFrozen(data)).toBe(false);
+  });
+
   it('filter: no store call is made for a rejected add', async () => {
     const { q, calls } = setup(() => false);
     await q.add({}, { id: 'warm' }).catch(() => {});
