@@ -13,7 +13,7 @@ await queue.upsertSchedule('digest', {
 - Schedules live in the store, so every pod sees the same ones. `Queue` and `Producer` both manage them.
 - They fire only on a pod that runs the queue's scheduler: every pod with a worker on the queue, from its first `process()` until its last worker closes, or a pod that called `startScheduler()`. A producer never fires one. Scheduler options are in [Queue options](01-queue.md#scheduler).
 - One job per tick, however many pods run a scheduler. Ticks are judged by store time; pod clocks never matter. A tick fires within about `tickMs` of its time.
-- After downtime, the missed ticks collapse into one job for the oldest missed tick. The schedule then goes on from its grid.
+- After downtime, the missed ticks collapse into one job for the oldest missed tick. The schedule then goes on from its grid. See [Missed ticks](#missed-ticks).
 - `queue.pause()` holds the jobs back but does not stop schedules from making them. Use `pauseSchedule(key)`.
 - A running scheduler keeps the process alive until it stops or the queue closes.
 
@@ -161,6 +161,40 @@ queue.process(async (job) => {
   if (job.schedule) console.log(`tick ${job.schedule.scheduledFor} of ${job.schedule.key}`)
 })
 ```
+
+## Missed ticks
+
+A tick is missed when no pod ran the queue's scheduler at its time: every pod was down for a deploy, or the store was unreachable. When a scheduler runs again, all of a schedule's missed ticks collapse into **one** job:
+
+- Its `scheduledFor` is the **oldest** missed tick, and it fires within about `tickMs` of the scheduler starting.
+- The ticks after it are not run. The schedule goes on with its next tick after now, on the same grid.
+- The `overlap` policy applies to that one job like to any tick.
+
+Example: a schedule with `cron: '*/5 * * * *'` and a deploy that keeps every pod down from 10:02 to 10:18. The 10:05, 10:10 and 10:15 ticks are missed. At 10:18 one job fires with `scheduledFor` 10:05, and the next job is the 10:20 tick.
+
+A paused schedule is different: `resumeSchedule` goes on from the next tick after now and runs no missed tick.
+
+This behaviour is not configurable yet; a per-schedule setting to skip missed ticks or run every one of them is planned for a later release. Until then, a handler can decide from `job.schedule.scheduledFor`. These examples assume a schedule with a fixed period:
+
+```ts
+const PERIOD = 5 * 60_000 // the schedule's period
+
+// Skip: drop a catch-up job, keep only ticks that run on time
+queue.process(async (job) => {
+  if (job.schedule && job.attempt === 1 && Date.now() - job.schedule.scheduledFor > PERIOD) return
+  await sendReport()
+})
+
+// Catch up: run the work once for every tick the job stands for
+queue.process(async (job) => {
+  if (!job.schedule) return
+  for (let t = job.schedule.scheduledFor; t < Date.now(); t += PERIOD) await sendReportFor(t)
+})
+```
+
+- `scheduledFor` is in store time; `Date.now()` is the pod's clock, which is close enough for a period of minutes.
+- The skip check looks at the first attempt only, so a retry of an on-time tick still runs.
+- In the catch-up loop, make `sendReportFor(t)` safe to repeat for the same `t`: a job can run more than once.
 
 ## Overlap
 
