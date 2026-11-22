@@ -4,6 +4,11 @@ All notable changes to `@sureq/store-test`, the conformance suite for SureQ stor
 `@sureq/core` peer dependency says which core versions it works with. Core's own changes are in
 [packages/core/CHANGELOG.md](../core/CHANGELOG.md).
 
+## 1.0.2 - 2026-11-22
+
+**Fixed**
+- `runStoreConformance` detects Jest. It looked for a global `jest` object, which Jest does not put on `globalThis` (it injects `jest` into each test file's scope), so under Jest it threw `InvalidOptionError` asking for `runner`. It now also recognises Jest by `JEST_WORKER_ID`. Passing `runner` explicitly still works.
+
 ## 1.0.1 - 2026-11-20
 
 No code or behaviour changes.

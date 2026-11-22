@@ -10,6 +10,7 @@ runStoreConformance({
     const store = new MemoryStore();
     return { store, cleanup: () => store.close() };
   },
-  skip: ['contract', 'capabilities', 'claim', 'lease', 'lease-config', 'fencing', 'sweep', 'poison', 'release', 'cancel', 'gpause', 'clock'],
+  // every group, passed in by tests/suite.test.ts so this list never goes stale: proves the runner wiring and the report
+  skip: process.env.SMOKE_SKIP.split(','),
   report: join(process.env.SMOKE_REPORT_DIR, 'jest.json'),
 });
