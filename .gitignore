@@ -17,3 +17,6 @@ packages/*/coverage/
 
 # Browser-automation output (screenshots, console logs, page snapshots)
 /.playwright-mcp/
+
+# graphify knowledge-graph output
+/graphify-out/
