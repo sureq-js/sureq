@@ -7,7 +7,10 @@ type Hook = (fn: () => unknown) => void;
 /** The runner whose globals are present: Jest, Vitest (with globals) or node:test. */
 export function detectRunner(): RunnerHooks {
   const g = globalThis as Record<string, unknown>;
-  if (g['jest'] !== undefined || (process.env['VITEST'] && typeof g['describe'] === 'function')) {
+  // Jest sets JEST_WORKER_ID in every worker; its `jest` object is injected into each test file's scope, so it is
+  // not on globalThis when this library runs. A global `jest` is still accepted where a setup puts one there.
+  const jest = Boolean(process.env['JEST_WORKER_ID']) || g['jest'] !== undefined;
+  if ((jest || process.env['VITEST']) && typeof g['describe'] === 'function') {
     return {
       describe: (name, fn) => (g['describe'] as Fn)(name, fn),
       it: (name, fn) => (g['it'] as Fn)(name, fn),

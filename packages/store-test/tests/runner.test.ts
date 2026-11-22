@@ -33,6 +33,25 @@ describe('runner', () => {
     expect(calls).toEqual(['describe d', 'it t', 'beforeAll', 'afterAll']);
   });
 
+  it('suite: jest is detected as it really runs: JEST_WORKER_ID and the hook globals, no global jest object', () => {
+    vi.stubEnv('VITEST', '');
+    vi.stubEnv('NODE_TEST_CONTEXT', '');
+    vi.stubEnv('JEST_WORKER_ID', '1');
+    // jest injects `jest` into each test file's scope, not onto globalThis
+    vi.stubGlobal('jest', undefined);
+    const calls: string[] = [];
+    vi.stubGlobal('describe', (n: string) => calls.push(`describe ${n}`));
+    vi.stubGlobal('it', (n: string) => calls.push(`it ${n}`));
+    vi.stubGlobal('beforeAll', () => calls.push('beforeAll'));
+    vi.stubGlobal('afterAll', () => calls.push('afterAll'));
+    const r = detectRunner();
+    r.describe('d', () => {});
+    r.it('t', () => {});
+    r.before(() => {});
+    r.after(() => {});
+    expect(calls).toEqual(['describe d', 'it t', 'beforeAll', 'afterAll']);
+  });
+
   it('suite: fake clock advances and rejects bad input', () => {
     const c = new FakeClock(5);
     expect(c.now()).toBe(5);

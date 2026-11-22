@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { MemoryStore } from '@sureq/core';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { GROUPS } from '../src/groups/index.js';
 import { BROKEN } from './broken/index.js';
 import { runAgainst, type RunResult } from './helpers/run-against.js';
 
@@ -90,28 +91,20 @@ describe('suite', { timeout: 600_000 }, () => {
     expect(bad).toEqual([]);
   });
 
-  it('suite: runs under node:test, vitest and jest', async ({ annotate }) => {
+  it('suite: runs under node:test, vitest and jest', async () => {
     const out = mkdtempSync(join(tmpdir(), 'sureq-smoke-'));
     const read = (name: string) => JSON.parse(readFileSync(join(out, `${name}.json`), 'utf8'));
-    const env = { ...process.env, SMOKE_REPORT_DIR: out, NODE_TEST_CONTEXT: undefined, VITEST: undefined, VITEST_WORKER_ID: undefined, VITEST_POOL_ID: undefined };
+    // every group skipped, as in the node and vitest smoke files: the run proves the runner wiring and the report
+    const env = { ...process.env, SMOKE_REPORT_DIR: out, SMOKE_SKIP: GROUPS.map((g) => g.name).join(','), NODE_TEST_CONTEXT: undefined, VITEST: undefined, VITEST_WORKER_ID: undefined, VITEST_POOL_ID: undefined };
     const run = (cmd: string, args: string[]) => execFileSync(cmd, args, { cwd: root, env, stdio: 'pipe' });
     run(process.execPath, ['--import', 'tsx', '--test', 'tests/smoke/node/smoke.test.ts']);
     expect(read('node').suite).toBe('1');
     run(process.execPath, [join(dirname(createRequire(import.meta.url).resolve('vitest/package.json')), 'vitest.mjs'), 'run', '--config', 'tests/smoke/vitest/vitest.config.ts']);
     expect(read('vitest').suite).toBe('1');
-    const jest = (() => {
-      try {
-        return createRequire(import.meta.url).resolve('jest/bin/jest.js');
-      } catch {
-        return null;
-      }
-    })();
-    if (jest) {
-      run(process.execPath, [jest, '--rootDir', 'tests/smoke/jest']);
-      expect(read('jest').suite).toBe('1');
-    } else {
-      await annotate('jest is not installed, so the jest smoke run was skipped');
-    }
+    // jest is a devDependency, so this runs everywhere (locally and in CI); a missing jest fails here instead of skipping
+    const jest = createRequire(import.meta.url).resolve('jest/bin/jest');
+    run(process.execPath, [jest, '--rootDir', 'tests/smoke/jest']);
+    expect(read('jest').suite).toBe('1');
   });
 });
 
