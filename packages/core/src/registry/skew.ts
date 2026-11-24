@@ -8,6 +8,11 @@ import { platform, type Timer } from '../platform/index.js';
 
 /** How often a queue with a running worker reads the registry for version skew and scheduler presence. */
 export const SKEW_CHECK_MS = 60_000;
+/**
+ * When the first check finds no scheduler, the next one comes this soon: workers of other pods that start at the same
+ * time (a rollout) may not have registered yet.
+ */
+export const FIRST_RECHECK_MS = 5_000;
 
 type Skewed = { workerId: string; sureqVersion: string }[];
 
@@ -17,10 +22,12 @@ export interface RegistryCheckHost {
   readonly logger: Logger;
   emitSkew(workers: Skewed): void;
   report(e: unknown, operation: string): void;
+  /** This queue object runs a scheduler: counted even before its worker's record reaches the registry. */
+  schedulerRunning(): boolean;
 }
 
 /**
- * Every SKEW_CHECK_MS while started: lists the queue's live workers, emits `versionSkew` once per distinct set of
+ * At start (again after FIRST_RECHECK_MS when that first check finds no scheduler), then every SKEW_CHECK_MS while started: lists the queue's live workers, emits `versionSkew` once per distinct set of
  * workers whose release is not adjacent to this pod's, and caches whether the queue has unpaused schedules but no
  * live worker runs a scheduler. Advisory only: it never blocks anything; a failed read is reported once per outage.
  */
@@ -32,6 +39,8 @@ export class RegistryCheck {
   #failing = false;
   #lastSkew = '[]';
   #noScheduler = false;
+  /** Checks that answered since the last start. */
+  #checks = 0;
 
   constructor(host: RegistryCheckHost) {
     this.#host = host;
@@ -45,7 +54,8 @@ export class RegistryCheck {
   start(): void {
     if (this.#running) return;
     this.#running = true;
-    if (!this.#ticking) this.#schedule();
+    this.#checks = 0;
+    if (!this.#ticking && this.#timer === undefined) this.#schedule(0);
   }
 
   /** No check after this; the cached answer is dropped, since no worker here watches any more. */
@@ -56,15 +66,16 @@ export class RegistryCheck {
     this.#noScheduler = false;
   }
 
-  #schedule(): void {
+  /** The next check after `delay` (the first one at once, so health() has an answer soon after process()). */
+  #schedule(delay = SKEW_CHECK_MS): void {
     this.#timer = platform.setTimer(() => {
       this.#timer = undefined;
       this.#ticking = true;
       void this.#tick().finally(() => {
         this.#ticking = false;
-        if (this.#running && this.#timer === undefined) this.#schedule();
+        if (this.#running && this.#timer === undefined) this.#schedule(this.#checks === 1 && this.#noScheduler ? FIRST_RECHECK_MS : SKEW_CHECK_MS);
       });
-    }, SKEW_CHECK_MS);
+    }, delay);
   }
 
   async #tick(): Promise<void> {
@@ -77,7 +88,8 @@ export class RegistryCheck {
       const { nextDueAt } = await client.call('listDueSchedules', scope, { limit: 1 });
       this.#failing = false;
       if (!this.#running) return;
-      this.#noScheduler = nextDueAt !== null && !live.some((w) => w.scheduler);
+      this.#noScheduler = nextDueAt !== null && !this.#host.schedulerRunning() && !live.some((w) => w.scheduler);
+      this.#checks++;
       const own = client.__formatSupport.sureqVersion;
       const skewed = findSkew(own, live).map(({ workerId, sureqVersion }) => ({ workerId, sureqVersion }));
       const key = JSON.stringify(skewed);

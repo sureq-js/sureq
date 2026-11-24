@@ -76,7 +76,7 @@ new Queue('emails', { maxPayloadBytes: 64 * 1024 })
 new Queue('emails', { maxBulkSize: 500 })
 ```
 
-The filter sees the data as it will be stored, the same JSON the handler gets (a `Date` as its ISO string), and that same JSON is what the job stores, so an object's `toJSON()` runs once per add. A filter returns `true` to accept, `false` to reject with reason `'filtered'`, a string to reject with that reason, or `{ reject, code?, details? }`. Anything else, or a throw, is a `FilterError`: the filter fails closed.
+The filter sees the data as it will be stored, the same JSON the handler gets (a `Date` as its ISO string), and that same JSON is what the job stores, so an object's `toJSON()` runs once per add. The filter's `operation` is what the add asks for: `'replace'` for `onDuplicate: 'replace'` even when the id is free, and with an `onDuplicate` function the incoming data is checked as `'add'` and, when a merge happens, the merged result again as `'merge'` (see [FilterContext](08-errors.md)). A filter returns `true` to accept, `false` to reject with reason `'filtered'`, a string to reject with that reason, or `{ reject, code?, details? }`. Anything else, or a throw, is a `FilterError`: the filter fails closed.
 
 ### Results and errors
 
@@ -222,17 +222,17 @@ new Queue('emails', { deadLetter: { keep: { age: '30d' } } })
 
 ### retention
 
-`RetentionOptions`. Cleanup runs on pods that run a worker.
+`RetentionOptions`. Cleanup runs on pods that run a worker, from the worker's sweep: a pass starts at a sweep tick once `interval` has passed, so an `interval` shorter than the worker's `sweepInterval` runs once per sweep.
 
 | Name | Type | Default | Meaning |
 |---|---|---|---|
-| `completed` | `Keep` | the newest 1000 | How long completed jobs are kept. |
-| `failed` | `Keep` | 14 days | How long failed jobs that are not dead letters are kept. |
+| `completed` | `Keep` | the newest 1000 | How long completed jobs are kept. A count never removes a job that finished less than `resultGrace` ago. |
+| `failed` | `Keep` | 14 days | How long failed jobs that are not dead letters are kept. A count never removes a job that finished less than `resultGrace` ago. |
 | `cancelled` | `Keep` | the same as `failed` | How long cancelled jobs are kept. |
 | `byName` | `Record<string, RetentionPolicies>` | none | `completed`, `failed` and `cancelled` per job name. |
-| `interval` | `Duration` | `'60s'` | How often the cleanup pass runs. |
+| `interval` | `Duration` | `'60s'` | How often the cleanup pass runs, at most once per worker `sweepInterval`. |
 | `pageSize` | `number` | `500` | Jobs deleted per store call, 1 to 5000. |
-| `resultGrace` | `Duration` | `'30s'` | How long a "keep none" job stays readable. `0` deletes it as it finishes. |
+| `resultGrace` | `Duration` | `'30s'` | How long a "keep none" job stays readable. `0` deletes it as it finishes. A count (`n` or `{ count }`) also spares jobs finished within it, so a burst can stay above the count for this long. |
 | `retainedAge` | `Duration` | `'7d'` | Age kept for jobs added with `uniqueWhile: 'retained'` when no rule gives one. |
 
 ```ts
@@ -252,7 +252,7 @@ A `Keep` is one of:
 |---|---|
 | `true` | keep forever |
 | `false` or `0` | keep none (readable for `resultGrace`) |
-| a number `n` | keep the newest `n` |
+| a number `n` | keep the newest `n` (jobs finished within `resultGrace` are not counted out) |
 | `{ count?, age? }` | remove a job when either limit is hit |
 
 The policy is chosen when the job finishes: the job's own `keep`, then `byName[name]`, then the queue's, then the default. Setting `retention.failed` to keep none while dead letters are on is an `InvalidOptionError`.

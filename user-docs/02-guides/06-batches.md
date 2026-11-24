@@ -52,6 +52,7 @@ await queue.close()
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'emails' }
 batch of 3
 ada@example.com sent
 alan@example.com sent

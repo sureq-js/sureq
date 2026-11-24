@@ -55,6 +55,7 @@ await queue.close()
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'emails' }
 blocked 3
 cancel alan true
 start ada

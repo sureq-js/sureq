@@ -50,7 +50,12 @@ export class StoreClient {
   #callTimeoutMs: number | undefined;
   readonly #listeners = new Set<(e: ConnectionEvent) => void>();
   readonly #waiters = new Set<(connected: boolean) => void>();
+  /** The next probe, while one is scheduled. */
   #probe: Timer | undefined;
+  /** The timeout of the probe in flight, if any. */
+  #probeLimit: Timer | undefined;
+  /** Raised when an outage ends outside the prober: a probe started before then is stale and changes nothing. */
+  #probeGen = 0;
   #downSince = 0;
   #attempts = 0;
   /** The not-durable warning was logged for this store object. */
@@ -239,21 +244,41 @@ export class StoreClient {
    * that does not answer within the wait before it (at least PROBE_TIMEOUT_MIN_MS) counts as failed.
    */
   async #runProbe(delay: number): Promise<void> {
+    this.#probe = undefined;
     this.#attempts++;
+    const gen = this.#probeGen;
     let limit: Timer | undefined;
+    let ok = true;
     try {
       await new Promise<unknown>((resolve, reject) => {
-        // Kept in #probe while the probe runs, so close clears it too.
-        limit = this.#probe = platform.setTimer(() => reject(new RangeError('probe timed out')), Math.max(PROBE_TIMEOUT_MIN_MS, delay));
+        // Kept in #probeLimit while the probe runs, so close clears it too.
+        limit = this.#probeLimit = platform.setTimer(() => reject(new RangeError('probe timed out')), Math.max(PROBE_TIMEOUT_MIN_MS, delay));
         (this.#opened ? this.store.now() : this.open()).then(resolve, reject);
       });
     } catch {
-      limit?.cancel();
-      if (this.#state === 'reconnecting') this.#scheduleProbe();
-      return;
+      ok = false;
     }
     limit?.cancel();
+    if (this.#probeLimit === limit) this.#probeLimit = undefined;
+    // The outage it probed for already ended; a later outage has its own probe.
+    if (gen !== this.#probeGen) return;
+    if (ok) this.#endOutage();
+    else if (this.#state === 'reconnecting') this.#scheduleProbe();
+  }
+
+  /**
+   * @internal A call outside the prober (a `ready()` attempt) just got an answer from the store: end an outage now
+   * instead of at the next backoff probe. A probe already in flight is stale from here: it changes nothing when it settles.
+   */
+  markReachable(): void {
+    if (this.#state !== 'reconnecting') return;
+    this.#probeGen++;
+    this.#probe?.cancel();
     this.#probe = undefined;
+    this.#endOutage();
+  }
+
+  #endOutage(): void {
     if (this.#state !== 'reconnecting') return;
     this.#state = 'connected';
     this.#emit({ type: 'reconnected', downForMs: platform.monotonicMs() - this.#downSince, attempts: this.#attempts });
@@ -295,6 +320,9 @@ export class StoreClient {
     this.#callTimeoutMs = undefined;
     this.#probe?.cancel();
     this.#probe = undefined;
+    this.#probeLimit?.cancel();
+    this.#probeLimit = undefined;
+    this.#probeGen++;
     this.#state = 'closed';
     this.#settleWaiters(false);
     if (!this.#owned) return;

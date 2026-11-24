@@ -51,6 +51,7 @@ Output (your times differ):
 ```text
 created unchanged
 [ '2026-11-16T06:00:00.000Z', '2026-11-17T06:00:00.000Z' ]
+store is not durable; jobs are lost on restart { queue: 'digests' }
 sched:team-digest:1794701718162 team-digest
 sched:team-digest:1794701719162 team-digest
 ```

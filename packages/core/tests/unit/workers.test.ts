@@ -261,7 +261,8 @@ describe('workers', () => {
     expect([...runs.values()]).toEqual(Array.from({ length: 20 }, () => 1));
     expect((await q.getCounts()).completed).toBe(20);
     expect(stalled).not.toHaveBeenCalled();
-    expect(w.ops('listWorkers')).toEqual([]);
+    // only the registry check at worker start reads the registry (one per Queue object), never the claim or sweep
+    expect(w.ops('listWorkers')).toHaveLength(1);
   });
 
   it('workers: record carries sureqVersion and formatVersion', async () => {
@@ -396,6 +397,40 @@ describe('workers', () => {
     expect(h).toMatchObject({ status: 'degraded', live: true });
     q.startScheduler();
     await w.tick(60_000);
+    expect((await q.health()).warnings.map((x) => x.code)).not.toContain('NO_SCHEDULER_RUNNING');
+  });
+
+  it('workers: the scheduler check runs at worker start, not a full check interval later (regression)', async () => {
+    const w = world();
+    const q = w.queue(undefined, { scheduler: { enabled: false } });
+    await q.upsertSchedule('k', { every: '1h', template: { data: {} } });
+    q.process(async () => {}, HB);
+    await w.tick(1000);
+    expect((await q.health()).warnings.map((x) => x.code)).toContain('NO_SCHEDULER_RUNNING');
+  });
+
+  it('workers: the first scheduler check counts this pod\'s own scheduler before its worker is registered (regression)', async () => {
+    let open!: () => void;
+    const gate = new Promise<void>((r) => (open = r));
+    const w = world({ registerWorker: async (...args: Parameters<Store['registerWorker']>) => { await gate; return w.raw.registerWorker(...args); } });
+    const q = w.queue();
+    await q.upsertSchedule('k', { every: '1h', template: { data: {} } });
+    q.process(async () => {}, HB);
+    await w.tick(1000);
+    expect((await q.health()).warnings.map((x) => x.code)).not.toContain('NO_SCHEDULER_RUNNING');
+    open();
+  });
+
+  it('workers: a scheduler warning from the first check is re-checked within seconds, not a full interval (regression)', async () => {
+    const w = world();
+    // this pod runs no scheduler; another pod's scheduler worker registers just after this pod's first check
+    const q = w.queue(undefined, { scheduler: { enabled: false } });
+    await q.upsertSchedule('k', { every: '1h', template: { data: {} } });
+    q.process(async () => {}, HB);
+    await w.tick(1000);
+    expect((await q.health()).warnings.map((x) => x.code)).toContain('NO_SCHEDULER_RUNNING');
+    await w.raw.registerWorker(NS, reg({ workerId: 'other', scheduler: true, heartbeatIntervalMs: 60_000 }));
+    await w.tick(5000);
     expect((await q.health()).warnings.map((x) => x.code)).not.toContain('NO_SCHEDULER_RUNNING');
   });
 

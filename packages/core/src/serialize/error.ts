@@ -42,6 +42,12 @@ export const errorOptionsSchema: Schema<SerializeOptions> = {
   },
 };
 
+/** The queue's defaults, for a call from plain JS that left out `opts`. */
+const DEFAULT_SERIALIZE: SerializeOptions = {
+  maxErrorBytes: errorOptionsSchema.fields.maxErrorBytes.default as number,
+  storeStacks: errorOptionsSchema.fields.storeStacks.default as boolean,
+};
+
 const RESERVED = new Set(['name', 'message', 'stack', 'code', 'cause', 'errors']);
 const PROPS_DEPTH = 3;
 const CAUSE_DEPTH = 5;
@@ -104,8 +110,52 @@ function toJson(v: unknown, depth: number, ancestors: WeakSet<object>): JsonValu
   }
 }
 
-const isErrorLike = (v: unknown): v is object =>
-  typeof v === 'object' && v !== null && typeof read(v, 'message') === 'string';
+/** An Error, or an object with a string `message`. A real Error counts even when its `message` cannot be read. */
+const isErrorLike = (v: unknown): v is object => {
+  if (typeof v !== 'object' || v === null) return false;
+  if (typeof read(v, 'message') === 'string') return true;
+  try {
+    return v instanceof Error;
+  } catch {
+    // a revoked proxy
+    return false;
+  }
+};
+
+/** The constructor's name, for an Error whose own `name` cannot be read. */
+function ctorName(v: object): string | undefined {
+  try {
+    const n: unknown = (v as { constructor?: { name?: unknown } }).constructor?.name;
+    return typeof n === 'string' && n ? n : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** A short JSON description of an object, for a message. */
+function summarize(v: object, value: JsonValue | typeof DROP): string {
+  let summary: string;
+  try {
+    summary = JSON.stringify(value) ?? String(v);
+  } catch {
+    summary = '[object]';
+  }
+  return summary.slice(0, 200);
+}
+
+/** An error's message as text: a message that is not a string is described, and one that cannot be read is marked. */
+function messageOf(v: object): string {
+  let m: unknown;
+  try {
+    m = (v as { message?: unknown }).message;
+  } catch {
+    return '[unserializable error]';
+  }
+  if (typeof m === 'string') return m;
+  if (m === undefined) return '';
+  if (typeof m === 'object' && m !== null) return summarize(m, toJson(m, 1, new WeakSet()));
+  return String(m);
+}
 
 function nonError(v: unknown): SerializedError {
   const out: SerializedError = { v: 1, name: 'NonErrorThrown', message: '' };
@@ -115,13 +165,7 @@ function nonError(v: unknown): SerializedError {
   }
   const value = toJson(v, 1, new WeakSet());
   if (typeof v === 'object' && v !== null) {
-    let summary: string;
-    try {
-      summary = JSON.stringify(value) ?? String(v);
-    } catch {
-      summary = '[object]';
-    }
-    out.message = summary.slice(0, 200);
+    out.message = summarize(v, value);
   } else {
     out.message = String(v);
   }
@@ -243,7 +287,7 @@ function capture(v: unknown, depth: number, w: Walk): SerializedError {
   w.seen.add(v);
 
   const name = read(v, 'name');
-  const out: SerializedError = { v: 1, name: clip(typeof name === 'string' && name ? name : 'Error', NAME_MAX, w), message: read(v, 'message') as string };
+  const out: SerializedError = { v: 1, name: clip(typeof name === 'string' && name ? name : (ctorName(v) ?? 'Error'), NAME_MAX, w), message: messageOf(v) };
   const stack = read(v, 'stack');
   if (w.opts.storeStacks && typeof stack === 'string') out.stack = stack;
   const code = read(v, 'code');
@@ -269,6 +313,8 @@ function capture(v: unknown, depth: number, w: Walk): SerializedError {
  * `opts` are trusted: the queue validated them with errorOptionsSchema.
  */
 export function serializeError(err: unknown, opts: SerializeOptions): SerializedError {
+  // Plain JS may leave out `opts`: the queue defaults then, not a fallback that loses what the error was.
+  opts ??= DEFAULT_SERIALIZE;
   try {
     const walk: Walk = { opts, seen: new WeakSet(), truncated: false };
     const out = capture(err, 0, walk);

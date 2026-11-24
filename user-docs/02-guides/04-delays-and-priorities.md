@@ -13,6 +13,8 @@ type Email = { to: string; subject: string }
 const queue = new Queue<Email>('emails')
 
 // Add every job before a worker starts, so the order is easy to see.
+// The clock starts before the delayed add: its 500 ms count from there.
+const started = Date.now()
 await queue.add({ to: 'ada@example.com', subject: 'Reminder' }, { delay: '500ms' })
 await queue.add({ to: 'alan@example.com', subject: 'Newsletter' })
 await queue.add({ to: 'grace@example.com', subject: 'Newsletter' })
@@ -22,7 +24,6 @@ await queue.add({ to: 'barbara@example.com', subject: 'Newsletter' }, { first: t
 const { waiting, delayed } = await queue.getCounts()
 console.log({ waiting, delayed })
 
-const started = Date.now()
 const worker = queue.process(async (job) =>
   console.log(`${Date.now() - started >= 500 ? 'late ' : 'now  '}${job.data.subject} to ${job.data.to}`),
 )
@@ -36,6 +37,7 @@ Output:
 
 ```text
 { waiting: 4, delayed: 1 }
+store is not durable; jobs are lost on restart { queue: 'emails' }
 now  Password reset to linus@example.com
 now  Newsletter to barbara@example.com
 now  Newsletter to alan@example.com

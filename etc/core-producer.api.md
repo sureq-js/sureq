@@ -1174,9 +1174,9 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
     }): Promise<{
         removed: number;
     }>;
-    off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): void;
-    on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe;
-    once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe;
+    off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): void;
+    on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): Unsubscribe;
+    once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): Unsubscribe;
     pause(): Promise<{
         changed: boolean;
     }>;

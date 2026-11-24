@@ -40,6 +40,7 @@ await store.close()
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'emails' }
 sent ada@example.com
 completed
 workers seen by the producer 1

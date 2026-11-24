@@ -119,7 +119,13 @@ const isFinished = (s: JobState): boolean => s === 'completed' || s === 'failed'
 export async function computeMerge(ctx: Omit<MergeContext, 'client' | 'scope' | 'budget'>, rec: JobRecord): Promise<string> {
   const c = ctx.computed;
   if (c && c.rev === rec.rev && c.base === rec.data) return c.json;
-  const merged = ctx.mergeFn(deepFreeze(ctx.toJob(rec)), ctx.incoming);
+  let merged: unknown;
+  try {
+    merged = ctx.mergeFn(deepFreeze(ctx.toJob(rec)), ctx.incoming);
+  } catch (e) {
+    // the function threw: the thrown value is the cause, whatever it is
+    throw new InvalidMergeResultError({ jobId: ctx.id, cause: e });
+  }
   if (merged === undefined || typeof (merged as { then?: unknown } | null)?.then === 'function') throw new InvalidMergeResultError({ jobId: ctx.id });
   await ctx.check?.(merged);
   let out: { json: string; bytes: number };

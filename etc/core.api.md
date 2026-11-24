@@ -957,7 +957,7 @@ export interface ListDueSchedulesResult {
 }
 
 // @public
-export type Listener<D, R, K extends keyof WorkerEvents> = (payload: WorkerEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>;
+export type Listener<D, R, K extends keyof WorkerEvents> = (payload: WorkerEvents<Job<D, R>, Jsonify<R>>[K]) => unknown;
 
 // @public
 export class ListenerError extends SureQError {
@@ -1387,9 +1387,9 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
     }): Promise<{
         removed: number;
     }>;
-    off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): void;
-    on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe;
-    once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe;
+    off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): void;
+    on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): Unsubscribe;
+    once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): Unsubscribe;
     pause(): Promise<{
         changed: boolean;
     }>;

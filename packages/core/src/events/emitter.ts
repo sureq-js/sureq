@@ -2,7 +2,7 @@ import { ListenerError } from '../errors/catalog.js';
 import { logEvent, type Logger } from '../logger/logger.js';
 import type { ErrorEvent, Unsubscribe } from './types.js';
 
-type Listener = (payload: never) => void | Promise<void>;
+type Listener = (payload: never) => unknown;
 interface Registration {
   fn: Listener;
   once: boolean;
@@ -22,16 +22,16 @@ export class TypedEmitter<E extends { error: ErrorEvent }> {
     this.#logger = opts.logger;
   }
 
-  on<K extends keyof E & string>(event: K, fn: (payload: E[K]) => void | Promise<void>): Unsubscribe {
+  on<K extends keyof E & string>(event: K, fn: (payload: E[K]) => unknown): Unsubscribe {
     return this.#add(event, fn as Listener, false);
   }
 
-  once<K extends keyof E & string>(event: K, fn: (payload: E[K]) => void | Promise<void>): Unsubscribe {
+  once<K extends keyof E & string>(event: K, fn: (payload: E[K]) => unknown): Unsubscribe {
     return this.#add(event, fn as Listener, true);
   }
 
   /** Remove one registration of `fn`. */
-  off<K extends keyof E & string>(event: K, fn: (payload: E[K]) => void | Promise<void>): void {
+  off<K extends keyof E & string>(event: K, fn: (payload: E[K]) => unknown): void {
     const list = this.#listeners.get(event);
     const i = list?.findIndex((r) => r.fn === fn) ?? -1;
     if (i >= 0) list!.splice(i, 1);

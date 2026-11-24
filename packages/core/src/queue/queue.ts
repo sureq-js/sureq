@@ -489,6 +489,7 @@ export class Queue<D = unknown, R = unknown, Names extends NameMap = Record<stri
       this.#registryCheck ??= new RegistryCheck({
         client, scope, logger,
         emitSkew: (workers) => this.events.emit('versionSkew', { workers }),
+        schedulerRunning: () => this.#scheduler?.running ?? false,
         report: (e, operation) => this.report(isSureQError(e) ? e : new InternalError(`${operation} failed`, { cause: e }), 'store', { operation }),
       });
       this.#registryCheck.start();

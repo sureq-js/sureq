@@ -552,6 +552,8 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
           // the format check first: a refused pod's later ready() calls answer from it without a store call
           await this.#client.checkFormat(this.shared.namespace);
           await this.#client.call('now');
+          // The store answered: the outage is over now, not at the prober's next backoff probe.
+          this.#client.markReachable();
           return;
         } catch (e) {
           // Only an unreachable store is waited out; any other failure is the answer.
@@ -1195,17 +1197,17 @@ export abstract class QueueBase<D = unknown, R = unknown, E extends keyof QueueE
   }
 
   /** Listen for an event; returns a function that stops listening. */
-  on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe {
+  on<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): Unsubscribe {
     return this.events.on(event, fn);
   }
 
   /** Listen for the next occurrence of an event only. */
-  once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): Unsubscribe {
+  once<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): Unsubscribe {
     return this.events.once(event, fn);
   }
 
   /** Stop a listener added with `on` or `once`. */
-  off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>): void {
+  off<K extends E>(event: K, fn: (payload: QueueEvents<Job<D, R>, Jsonify<R>>[K]) => unknown): void {
     this.events.off(event, fn);
   }
 

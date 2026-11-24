@@ -58,6 +58,7 @@ await store.close()
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'emails' }
 start quick
 start slow
 closing

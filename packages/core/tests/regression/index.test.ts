@@ -82,6 +82,11 @@ const EXTRA: Array<[name: string, file: string]> = [
   ['worker: close deadline counts from the close call even with a claim in flight', 'close-deadline.test.ts'],
   ['events: a zero-delay retry reports waiting', 'zero-delay-retry.test.ts'],
   ['serialize: a circular value error cause does not contain property names', 'serialization-cause.test.ts'],
+  ['regression: addBulk (plain and atomic) still reports InvalidMergeResultError with the cause', 'merge-throw-wrapped.test.ts'],
+  ['regression: queue.ready() ends a start-up outage; add() and health() work at once', 'ready-ends-outage.test.ts'],
+  ['regression: producer.ready() ends a start-up outage; add() and health() work at once', 'ready-ends-outage.test.ts'],
+  ['regression: an unknown option is an InvalidOptionError', 'console-logger-level.test.ts'],
+  ['regression: the documented two-argument form keeps name Error', 'serialize-error-unreadable-message.test.ts'],
 ];
 
 describe('regression index', () => {

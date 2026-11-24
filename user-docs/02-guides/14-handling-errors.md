@@ -61,6 +61,7 @@ Output:
 ```text
 PAYLOAD_TOO_LARGE 2034 > 1024
 JOB_NOT_FOUND Job "no-such-job" was not found
+store is not durable; jobs are lost on restart { queue: 'emails' }
 failed bounce attempts-exhausted BounceError MAIL_BOUNCE no mailbox for nobody@example.com
 error event listener failed LISTENER_ERROR
 failed MAIL_BOUNCE

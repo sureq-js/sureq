@@ -9,7 +9,7 @@ stop()
 ```
 
 - `on` and `once` return an `Unsubscribe`: `() => void`.
-- Listeners run in the order they were added. A listener may be `async`.
+- Listeners run in the order they were added. A listener may be `async`, and may return any value, which is ignored, so `({ job }) => ids.push(job.id)` is fine.
 - A listener that throws or rejects never breaks SureQ. Its failure is reported as an `error` event with `source: 'listener'`. A failing `error` listener is only logged.
 - An `error` event with no listener is logged. Always listen for `error`.
 - `J` below is the job snapshot, a [`Job<D, R>`](07-job-and-context.md#job), and `R` is the result type. The `completed` event's `result` is `Jsonify<R>`: the result as read back from JSON (a `Date` as its ISO string).

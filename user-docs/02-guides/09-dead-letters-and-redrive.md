@@ -53,6 +53,7 @@ await queue.close()
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'emails' }
 dead letter ada exhausted
 dead letter alan exhausted
 count 2

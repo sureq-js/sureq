@@ -1,4 +1,5 @@
 import { InvalidOptionError, type ConfigIssue } from '../errors/catalog.js';
+import { validate, type Schema } from '../util/validate.js';
 
 /** A log level, lowest to highest. */
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -32,9 +33,16 @@ export interface PinoLike {
 const LEVELS: readonly LogLevel[] = ['debug', 'info', 'warn', 'error'];
 const RANK = { debug: 0, info: 1, warn: 2, error: 3, silent: 4 } as const;
 
-/** Logger that writes to `console.*`, dropping messages below `level` (default `warn`). */
+const consoleSchema: Schema<{ level: LogLevel | 'silent' }> = {
+  fields: { level: { kind: 'enum', values: ['debug', 'info', 'warn', 'error', 'silent'], default: 'warn' } },
+};
+
+/**
+ * Logger that writes to `console.*`, dropping messages below `level` (default `warn`). An unknown level or option
+ * is an InvalidOptionError.
+ */
 export function consoleLogger(opts: { level?: LogLevel | 'silent' } = {}): Logger {
-  const min = RANK[opts.level ?? 'warn'];
+  const min = RANK[validate('consoleLogger', opts, consoleSchema).level];
   const at =
     (level: LogLevel) =>
     (msg: string, fields?: LogFields): void => {

@@ -44,6 +44,7 @@ await queue.close()
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'emails' }
 busy retry in 200 ms: mail server busy
 bounce retry in 200 ms: mailbox full
 bad failed: unrecoverable invalid address
