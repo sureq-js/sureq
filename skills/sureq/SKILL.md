@@ -2,7 +2,7 @@
 name: sureq
 description: Use when building or changing a SureQ job queue in Node.js or TypeScript - adding a queue, a job or a worker, background work, retries, delays, priorities, schedules, dead letters, graceful shutdown, or a custom SureQ store.
 metadata:
-  version: 1.0.2
+  version: 1.0.3
 ---
 
 # SureQ

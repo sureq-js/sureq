@@ -5,7 +5,7 @@ import { silent } from '../helpers/harness.js';
 import { outageStore } from '../helpers/outage.js';
 
 // Store down at start-up, then back: once ready() resolves the queue is connected and adds go through, without
-// waiting for the reconnect prober's next backoff probe (up to reconnect.maxDelay). Before 1.0.3, ready() resolved
+// waiting for the reconnect prober's next backoff probe (up to reconnect.maxDelay). Before, ready() resolved
 // while still 'reconnecting' and add() failed with STORE_UNAVAILABLE until the probe.
 describe('ready() after a start-up outage (regression)', () => {
   it('regression: queue.ready() ends a start-up outage; add() and health() work at once', () => afterOutage('queue'));

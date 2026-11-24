@@ -4,7 +4,7 @@ All notable changes to `@sureq/core`. From 1.0, semver applies to the public API
 The store contract stays experimental and may change in a minor release until it is declared stable.
 1.0.0 is the first published release;
 
-## 1.0.3 - unreleased
+## 1.0.3 - 2026-11-24
 
 Fixes from an end-to-end review of 1.0.2. No stored job format or store contract changes.
 

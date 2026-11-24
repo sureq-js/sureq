@@ -7,7 +7,7 @@ import { MemoryStore } from '../../src/store/memory/memory-store.js';
 import { silent } from '../helpers/harness.js';
 
 // A merge function that throws: add() rejects with InvalidMergeResultError carrying the thrown value as `cause`,
-// the same as addBulk, so callers that branch on SureQ codes see it. Before 1.0.3 the raw value escaped.
+// the same as addBulk, so callers that branch on SureQ codes see it. Before, the raw value escaped.
 describe('a throwing merge function (regression)', () => {
   const thrown: unknown[] = [new Error('boom'), 'str', { odd: true }];
 

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { InvalidOptionError } from '../../src/errors/catalog.js';
 import { consoleLogger } from '../../src/logger/logger.js';
 
-// consoleLogger validates its options like every other SureQ options object. Before 1.0.3 an unknown level
+// consoleLogger validates its options like every other SureQ options object. Before, an unknown level
 // (a typo such as 'warning') was accepted and turned on debug logging.
 describe('consoleLogger options (regression)', () => {
   afterEach(() => vi.restoreAllMocks());

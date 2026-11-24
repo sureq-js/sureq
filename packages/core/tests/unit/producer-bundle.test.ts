@@ -4,9 +4,9 @@ import { build } from 'esbuild';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
- * The gzipped size the minified producer bundle may reach: the measured size plus 10 % at 1.0.0-rc.1 (36 519).
- * 1.0.2 measured 36 399; the 1.0.3 merge, reconnect, logger and serializeError fixes add 278 bytes (36 677), so the
- * budget was raised to 36 864, leaving little headroom: re-measure before the next raise.
+ * The gzipped size the minified producer bundle may reach. First set to the measured size plus 10 % (36 519); raised
+ * to 36 864 when the merge, reconnect, logger and serializeError fixes took the bundle from 36 399 to 36 677. Little
+ * headroom is left: re-measure before the next raise.
  */
 export const PRODUCER_BUDGET_BYTES = 36_864;
 

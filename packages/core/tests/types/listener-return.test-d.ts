@@ -3,7 +3,7 @@ import { Queue } from '../../src/queue/queue.js';
 import { Producer } from '../../src/producer.js';
 import { MemoryStore } from '../../src/store/memory/memory-store.js';
 
-// Listeners may return anything (the value is ignored), like Node's EventEmitter. Before 1.0.3 the
+// Listeners may return anything (the value is ignored), like Node's EventEmitter. Before, the
 // `void | Promise<void>` return type rejected arrows such as `({ job }) => ids.push(job.id)` (TS2322).
 test('events: a listener may return any value', () => {
   const q = new Queue<{ n: number }>('q');
