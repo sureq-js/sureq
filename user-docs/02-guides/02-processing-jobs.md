@@ -41,6 +41,7 @@ console.log(worker.state)
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'emails' }
 start ada@example.com attempt 1
 start alan@example.com attempt 1
 done ada@example.com

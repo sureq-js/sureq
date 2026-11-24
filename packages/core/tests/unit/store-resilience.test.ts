@@ -28,7 +28,7 @@ describe('store resilience in the worker', () => {
   it('storeerr: claim failure emits error event and the loop recovers', async () => {
     let outage = false;
     // Notifications, the schedule loop and the worker registry stay up: this test is about the claim loop.
-    const up = ['add', 'subscribe', 'listDueSchedules', 'registerWorker', 'heartbeatWorker', 'purgeWorkers'];
+    const up = ['add', 'subscribe', 'listDueSchedules', 'registerWorker', 'heartbeatWorker', 'purgeWorkers', 'listWorkers'];
     const { q } = setup((op) => (outage && !up.includes(op) ? down() : undefined));
     const errors: Array<{ source: string; context: { operation?: string } }> = [];
     q.on('error', (e) => void errors.push(e as never));

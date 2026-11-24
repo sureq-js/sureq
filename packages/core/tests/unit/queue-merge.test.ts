@@ -129,7 +129,8 @@ describe('merge function', () => {
     await q.add({ a: 1 }, { id: 'm' });
     const before = await raw.get(scope, 'm');
     const boom = new Error('boom');
-    await expect(q.add({ b: 2 }, { id: 'm', onDuplicate: () => { throw boom; } })).rejects.toBe(boom);
+    // the thrown value is the cause of an InvalidMergeResultError, so callers can branch on the code
+    await expect(q.add({ b: 2 }, { id: 'm', onDuplicate: () => { throw boom; } })).rejects.toSatisfy((e) => e instanceof InvalidMergeResultError && e.cause === boom);
     expect(await raw.get(scope, 'm')).toEqual(before);
   });
 
@@ -199,8 +200,9 @@ describe('merge function', () => {
       (i as Data)['b'] = 3;
       return i;
     };
-    await expect(q.add({ b: 2 }, { id: 'm', onDuplicate: mutateExisting })).rejects.toThrow(TypeError);
-    await expect(q.add({ b: 2 }, { id: 'm', onDuplicate: mutateIncoming as never })).rejects.toThrow(TypeError);
+    const frozen = (e: unknown) => e instanceof InvalidMergeResultError && e.cause instanceof TypeError;
+    await expect(q.add({ b: 2 }, { id: 'm', onDuplicate: mutateExisting })).rejects.toSatisfy(frozen);
+    await expect(q.add({ b: 2 }, { id: 'm', onDuplicate: mutateIncoming as never })).rejects.toSatisfy(frozen);
     const same = await q.add({ b: 2 }, { id: 'm', onDuplicate: (e) => e.data });
     expect(same).toMatchObject({ duplicate: { action: 'merged' }, job: { data: { a: { deep: 1 } } } });
   });
@@ -225,7 +227,8 @@ describe('merge function', () => {
     const e = (await q.addBulk(items, { atomic: true }).catch((x: unknown) => x)) as BulkAddError;
     expect(e).toBeInstanceOf(BulkAddError);
     expect(e).toMatchObject({ index: 1, jobIds: ['new', 'held'] });
-    expect(e.cause).toBe(boom);
+    expect(e.cause).toBeInstanceOf(InvalidMergeResultError);
+    expect((e.cause as InvalidMergeResultError).cause).toBe(boom);
     const inCall = [{ data: { a: 1 }, opts: { id: 'n2' } }, { data: { b: 1 }, opts: { id: 'n2', onDuplicate: () => undefined as never } }];
     await expect(q.addBulk(inCall, { atomic: true })).rejects.toMatchObject({ index: 1 });
     expect(await raw.counts(scope)).toEqual(before);

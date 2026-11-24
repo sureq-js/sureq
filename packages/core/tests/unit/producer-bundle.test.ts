@@ -3,8 +3,12 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-/** The gzipped size the minified producer bundle may reach: the measured size plus 10 %. */
-export const PRODUCER_BUDGET_BYTES = 36_519;
+/**
+ * The gzipped size the minified producer bundle may reach. First set to the measured size plus 10 % (36 519); raised
+ * to 36 864 when the merge, reconnect, logger and serializeError fixes took the bundle from 36 399 to 36 677. Little
+ * headroom is left: re-measure before the next raise.
+ */
+export const PRODUCER_BUDGET_BYTES = 36_864;
 
 const packageRoot = fileURLToPath(new URL('../..', import.meta.url));
 /** Worker-side modules the producer entry must never pull in. */

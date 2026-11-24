@@ -46,6 +46,7 @@ await queue.close()
 Output:
 
 ```text
+store is not durable; jobs are lost on restart { queue: 'exports' }
 export-1 25% exported a.csv
 export-1 50% exported b.csv
 export-1 75% exported c.csv

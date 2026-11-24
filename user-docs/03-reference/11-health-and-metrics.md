@@ -85,7 +85,7 @@ A producer's report has no workers and no alerts.
 | `STORE_FORMAT_AHEAD` | The store moved to a format this pod cannot read. It claims nothing and fires no schedule. |
 | `SWEEP_STALLED` | This pod's sweeper has not finished a tick in 5 × `sweepInterval`. |
 | `SCHEDULER_STALE` | This pod's running scheduler has not finished a loop turn in 5 × `tickMs`. |
-| `NO_SCHEDULER_RUNNING` | The queue has unpaused schedules and no live worker reports a running scheduler. A scheduler started with `startScheduler()` on a pod with no worker is not seen. |
+| `NO_SCHEDULER_RUNNING` | The queue has unpaused schedules and no live worker reports a running scheduler. Only a pod running a worker checks this, when its first worker starts (again 5 s later if that check finds no scheduler, since other pods may still be starting) and then every 60 s; a pod with no worker (an API or admin pod) never reports it. A scheduler started with `startScheduler()` on a pod with no worker is not seen. |
 | `DEAD_LETTERS_HIGH` | The dead-letter count is above `deadLetter.warnAbove`. |
 
 ```ts

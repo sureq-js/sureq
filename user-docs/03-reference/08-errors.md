@@ -194,7 +194,7 @@ throw new StoreError('journal is corrupt', { operation: 'open', retryable: false
 These types go with `JobRejectedError`, `FilterError` and `DuplicateJobError`. The options themselves are in [Queue](01-queue.md#adding-jobs) and [Job options](02-job-options.md#duplicates).
 
 - `FilterVerdict` is what a filter returns: `true`, `false`, a reason string, or `{ reject: string; code?: string; details?: unknown }`.
-- `FilterContext<D>` is the filter's second argument: `{ queue, name, id, opts, operation }`. `id` is `null` when core makes the id; `opts` are the add's options over `defaultJobOptions`; `operation` is `'add'`, `'replace'`, `'merge'` or `'schedule'`.
+- `FilterContext<D>` is the filter's second argument: `{ queue, name, id, opts, operation }`. `id` is `null` when core makes the id; `opts` are the add's options over `defaultJobOptions`; `operation` is `'add'`, `'replace'`, `'merge'` or `'schedule'`. The filter runs before the store is asked, so `operation` is what the add asks for, not what happens: an add with `onDuplicate: 'replace'` is checked as `'replace'` even when the id is free and a new job is made. With an `onDuplicate` function the filter runs twice when the id is held by a waiting or delayed job: first on the incoming data as `'add'` (it becomes the job if the id is free), then on the merged result as `'merge'`. Rejecting the incoming data rejects the add, so no merge happens.
 - `DuplicateInfo` is `AddResult.duplicate`: `{ action: 'ignored' | 'replaced' | 'merged'; existingState: JobState; by: 'id' | 'singletonKey' }`.
 
 ```ts

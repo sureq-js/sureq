@@ -42,7 +42,7 @@ const preview = await queue.previewSchedule({ cron: '30 2 * * 1-5', tz: 'Europe/
 ```
 
 - `key` is a non-empty string of at most 200 UTF-8 bytes. The job id `sched:<key>:<tick>` must also fit the store's id limit.
-- `upsertSchedule` creates or replaces the schedule. It is safe to call from every pod at start-up. `UpsertResult` is `{ schedule, action }`, with `action` one of `'created'`, `'updated'`, `'unchanged'` (the same definition is stored) or `'stale'` (a higher `version` is stored, and nothing was written).
+- `upsertSchedule` creates or replaces the schedule. It is safe to call from every pod at start-up. `UpsertResult` is `{ schedule, action }`, with `action` one of `'created'`, `'updated'`, `'unchanged'` (the same definition is stored; a higher `version` is still recorded, so a later lower one is `'stale'`) or `'stale'` (a higher `version` is stored, and nothing was written).
 - `getSchedule` returns `null` for an unknown key.
 - `listSchedules` returns one page in key order. Options: `limit` 1 to 1000 (default `100`), `cursor` (the `nextCursor` of the page before), and `state` (`'active'` or `'paused'`). With `state`, a page may hold fewer than `limit` while `nextCursor` is set.
 - `pauseSchedule` stops the ticks. `resumeSchedule` starts them again from the next tick after now; missed ticks are not caught up. Both throw `ScheduleNotFoundError` for an unknown key.
@@ -235,8 +235,6 @@ queue.process(async (job) => {
 | `createdAt` | `number` | When the schedule was first stored, in store time. |
 | `updatedAt` | `number` | When the schedule was last changed, in store time. |
 | `rev` | `number` | The revision, raised on each write. |
-| `createdAt` | `number` | When it was created, in store time. |
-| `updatedAt` | `number` | When it was last written, in store time. |
 
 ```ts
 const s = await queue.getSchedule('digest')

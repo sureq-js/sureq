@@ -152,7 +152,7 @@ A job with a delay is `delayed`, not `waiting`, until it is due. That is expecte
 
 ### Schedules do not fire, and `health()` warns `NO_SCHEDULER_RUNNING`
 
-**Cause.** The queue has unpaused schedules, but no live worker runs a scheduler. Either no worker runs, or every worker's queue has `scheduler: { enabled: false }`.
+**Cause.** The queue has unpaused schedules, but no live worker runs a scheduler: every worker's queue has `scheduler: { enabled: false }`. Only a pod that runs a worker checks this: when its first worker starts, again 5 s later if no scheduler was found, then every 60 s. The warning can therefore show for a few seconds during a rollout, and a pod with no worker never shows it, even when no worker runs anywhere and nothing fires.
 
 **Fix.** Run a worker with the scheduler on, on at least one pod. A scheduler started with `startScheduler()` on a pod with no worker does fire schedules, but the warning stays, because only workers report a scheduler. See [Schedules](../02-guides/05-schedules.md).
 

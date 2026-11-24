@@ -71,7 +71,7 @@ export interface WorkerHost extends Readonly<Leases> {
 }
 
 /** A worker event listener for event `K`. */
-export type Listener<D, R, K extends keyof WorkerEvents> = (payload: WorkerEvents<Job<D, R>, Jsonify<R>>[K]) => void | Promise<void>;
+export type Listener<D, R, K extends keyof WorkerEvents> = (payload: WorkerEvents<Job<D, R>, Jsonify<R>>[K]) => unknown;
 
 /** A `ctx.fail` call decides the attempt, whatever the handler returned or threw afterwards. */
 function failRecordOr(ctx: WorkerContext, outcome: Outcome): Outcome {

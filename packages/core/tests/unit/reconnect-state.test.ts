@@ -280,4 +280,83 @@ describe('reconnect: connection state', () => {
     await second.close();
     expect(gaps(ctl, 'now', from)[0]).toBe(700);
   });
+
+  it('reconnect: a probe left hanging by ready() that settles during a later outage starts no second probe chain and no timer outlives close', async () => {
+    const inner = new MemoryStore();
+    let mode: 'up' | 'down' | 'hang' = 'up';
+    let failProbe: (() => void) | undefined;
+    const nowAt: number[] = [];
+    const down = () => Promise.reject(new TypeError('down'));
+    const { store } = spyStore(inner, {
+      counts: (...a: Parameters<Store['counts']>) => (mode === 'down' ? down() : inner.counts(...a)),
+      now: () => {
+        nowAt.push(Date.now());
+        if (mode === 'down') return down();
+        if (mode === 'hang') {
+          mode = 'up';
+          return new Promise<number>((_, reject) => (failProbe = () => reject(new TypeError('down'))));
+        }
+        return inner.now();
+      },
+    });
+    schedule(store, () => 0.5);
+    const q = new Queue('r', { store, logger: silent });
+    await q.ready();
+    mode = 'down';
+    await q.getCounts().catch(() => {});
+    mode = 'hang';
+    await vi.advanceTimersByTimeAsync(100);
+    await q.ready();
+    expect(q.connectionState).toBe('connected');
+    // a second outage starts while the first outage's probe still hangs
+    mode = 'down';
+    await q.getCounts().catch(() => {});
+    expect(q.connectionState).toBe('reconnecting');
+    const from = Date.now();
+    failProbe!();
+    await vi.advanceTimersByTimeAsync(3200);
+    // one probe chain: 100, 200, 400, 800, 1600 ms apart -> 5 probes in 3.2 s
+    expect(nowAt.filter((t) => t > from)).toHaveLength(5);
+    await q.close();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('reconnect: ready() ends an outage while a probe hangs; storeReconnected fires once and nothing leaks', async () => {
+    const inner = new MemoryStore();
+    let mode: 'up' | 'down' | 'hang' = 'up';
+    let releaseProbe: (() => void) | undefined;
+    const down = () => Promise.reject(new TypeError('down'));
+    const { store } = spyStore(inner, {
+      counts: (...a: Parameters<Store['counts']>) => (mode === 'down' ? down() : inner.counts(...a)),
+      now: () => {
+        if (mode === 'down') return down();
+        if (mode === 'hang') {
+          // this call is the prober's: it hangs; the next call (ready's) answers
+          mode = 'up';
+          return new Promise<number>((r) => (releaseProbe = () => r(Date.now())));
+        }
+        return inner.now();
+      },
+    });
+    schedule(store, () => 0.5);
+    const q = new Queue('r', { store, logger: silent });
+    await q.ready();
+    const reconnected = vi.fn();
+    q.on('storeReconnected', reconnected);
+    mode = 'down';
+    await q.getCounts().catch(() => {});
+    expect(q.connectionState).toBe('reconnecting');
+    mode = 'hang';
+    await vi.advanceTimersByTimeAsync(100);
+    expect(releaseProbe).toBeDefined();
+    await q.ready();
+    expect(q.connectionState).toBe('connected');
+    expect(reconnected).toHaveBeenCalledOnce();
+    releaseProbe!();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(reconnected).toHaveBeenCalledOnce();
+    expect(q.connectionState).toBe('connected');
+    await q.close();
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });

@@ -4,6 +4,25 @@ All notable changes to `@sureq/core`. From 1.0, semver applies to the public API
 The store contract stays experimental and may change in a minor release until it is declared stable.
 1.0.0 is the first published release;
 
+## 1.0.3 - 2026-11-24
+
+Fixes from an end-to-end review of 1.0.2. No stored job format or store contract changes.
+
+**Fixed**
+- A merge function (`onDuplicate: fn`) that throws makes `queue.add()` and `producer.add()` reject with `InvalidMergeResultError`, with the thrown value as its `cause`, as documented and as `addBulk` already did. Before, the raw value escaped (a bare string for `throw 'x'`), so `isSureQError` was `false`. A SureQ error thrown inside the merge function is wrapped too: read it from `cause`. An atomic `addBulk`'s `BulkAddError` now has that `InvalidMergeResultError` as its `cause`, not the raw value.
+- After the store was unreachable at start-up, `ready()` could resolve while the connection was still `reconnecting`: adds failed with `STORE_UNAVAILABLE` and `health().ready` stayed `false` until the next reconnect probe, up to `reconnect.maxDelay` later. When `ready()` gets an answer from the store, the outage now ends at once and `storeReconnected` fires before `ready()` resolves.
+- The registry check behind the `NO_SCHEDULER_RUNNING` warning and the `versionSkew` event runs when a queue's first worker starts, then every 60 s. Before, the first answer came 60 s after `process()`. The check counts this queue object's own running scheduler, so it does not warn while its worker is still registering, and when the first check finds no scheduler it checks again 5 s later, since other pods' workers may still be registering during a rollout.
+- Event listeners may return any value: `queue.on('completed', ({ job }) => ids.push(job.id))` compiles. The listener return type of `on`, `once` and `off` (and of the exported worker `Listener` type) was `void | Promise<void>`, which rejected arrows that return a value (TS2322); it is now `unknown`. The return value is still ignored, and a returned promise that rejects is still reported as an `error` event.
+- `consoleLogger()` validates its options like every other options object: an unknown `level` (such as `'warning'`) or option throws `InvalidOptionError`. Before, it was accepted and wrote every level.
+- `serializeError` keeps the name of an `Error` whose `message` cannot be read (the name, else the constructor's name, with message `'[unserializable error]'`), not `NonErrorThrown`. An `Error` whose `message` is not a string keeps it as text (`42` reads `'42'`, an object as its JSON). Called from plain JavaScript without options, it uses the queue defaults instead of falling back to `'[unserializable error]'`.
+
+**Docs**
+- The filter's `operation` is the requested mode: `'replace'` even when the id is free, and an `onDuplicate` function filters the incoming data as `'add'`, then the merged result as `'merge'`.
+- A retention count (`completed: n`) never removes a job finished less than `resultGrace` ago, and the cleanup pass runs at most once per worker `sweepInterval`.
+- `NO_SCHEDULER_RUNNING` is raised only by pods that run a worker.
+- `upsertSchedule`'s `'unchanged'` still records a higher `version`; the `Schedule` table no longer lists `createdAt` and `updatedAt` twice.
+- The delays guide's example starts its clock before the delayed add, so it prints `late Reminder` on every run; the guides' outputs show the in-memory store's startup warning.
+
 ## 1.0.2 - 2026-11-22
 
 Job data and results are stored as JSON, but their types claimed the handler got back exactly what was added: `new Queue<{ sendAt: Date }>` compiled, `job.data.sendAt.getTime()` threw on every attempt, and the job became a dead letter. No runtime behaviour, stored job format or store contract changes, except what the queue `filter` sees (below).

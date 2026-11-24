@@ -42,7 +42,7 @@ new Queue('emails', { logger })
 
 | Option | Type | Default | Meaning |
 |---|---|---|---|
-| `level` | `LogLevel \| 'silent'` | `'warn'` | Lowest level written. `'silent'` writes nothing. |
+| `level` | `LogLevel \| 'silent'` | `'warn'` | Lowest level written. `'silent'` writes nothing. Any other value, or an unknown option, throws `InvalidOptionError`. |
 
 ```ts
 consoleLogger({ level: 'debug' })
